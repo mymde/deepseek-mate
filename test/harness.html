@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><title>whale-mate harness</title>
+<style>
+  body{margin:0;font-family:system-ui;background:#f6f7fb;height:100vh;display:flex}
+  aside{width:220px;background:#eceff7;border-right:1px solid #dde1ee}
+  main{flex:1;display:flex;flex-direction:column}
+  .msgs{flex:1;padding:24px;overflow:auto}
+  .msg{max-width:520px;background:#fff;border:1px solid #e3e6f0;border-radius:12px;padding:12px 16px;margin:12px 0}
+  .composer{margin:0 24px 24px;background:#fff;border:1px solid #d9ddeb;border-radius:16px;padding:12px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+  textarea{width:100%;border:0;outline:0;resize:none;font:inherit;height:56px}
+</style></head>
+<body>
+<aside></aside>
+<main>
+  <div class="msgs"><div class="msg">你好！这是一个模拟的 Harness 对话区域。</div><div class="msg">希可儿应该坐在下面输入框的上沿。</div></div>
+  <div class="composer"><textarea placeholder="输入消息…"></textarea></div>
+</main>
+<script type="module">
+  import { createPet } from '../public/pet.js'
+  window.pet = await createPet({ modelUrl: new URLSearchParams(location.search).get('model') ?? '../public/deepseek-reset.vrm', size: 240, storageKey: 'whale-mate-test' })
+  window.__loaded = true
+</script>
+</body></html>

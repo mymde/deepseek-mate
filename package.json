@@ -1,0 +1,76 @@
+{
+  "name": "dsh-plugin-whale-mate",
+  "version": "0.6.3",
+  "private": false,
+  "description": "希可儿：DeepSeek Harness 的 3D 桌宠。安装即用，坐在输入框上陪你聊天、回复时开口说话；切换到桌面模式后可坐在任意窗口顶边和任务栏上。",
+  "license": "MIT",
+  "type": "module",
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test test/*.test.mjs",
+    "check:clip": "node scripts/check-clip.mjs",
+    "check": "node scripts/check-pet.mjs"
+  },
+  "devDependencies": {
+    "@pixiv/three-vrm": "3.3.3",
+    "esbuild": "0.25.10",
+    "koffi": "3.1.0",
+    "three": "0.169.0"
+  },
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./client/client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "client",
+    "desktop",
+    "public",
+    "!public/whale-maid.vrm",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE",
+    "ASSET_LICENSES.md",
+    "locale",
+    "scripts/repair-vrm.py",
+    "scripts/tune-mtoon.py"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "*",
+    "@deepseek-ai/dsh-tools": "*"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/cordis": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-tools": {
+      "optional": true
+    }
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-sidebar",
+        "@deepseek-ai/dsh-client-ui-settings"
+      ],
+      "platform": "web"
+    }
+  },
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "vrm",
+    "desktop-pet",
+    "companion"
+  ]
+}

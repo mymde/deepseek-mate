@@ -1,0 +1,17 @@
+{
+  "name": "koffi",
+  "version": "3.1.0",
+  "description": "Fast and easy-to-use dynamic C FFI (foreign function interface) for Node.js (vendored: JS loader + win32-x64 prebuilt from @koromix/koffi-win32-x64)",
+  "license": "MIT",
+  "homepage": "https://koffi.dev/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Koromix/koffi"
+  },
+  "author": {
+    "name": "Niels Martignène",
+    "email": "niels.martignene@protonmail.com",
+    "url": "https://koromix.dev/"
+  },
+  "main": "./index.cjs"
+}

@@ -1,0 +1,8 @@
+node_modules/
+test/shots/
+*.tgz
+test/models/
+releases/
+.DS_Store
+Thumbs.db
+*.log
