@@ -1,5 +1,7 @@
 # 希可儿 · deepseek-mate
 
+[![CI](https://github.com/mymde/deepseek-mate/actions/workflows/ci.yml/badge.svg)](https://github.com/mymde/deepseek-mate/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/dsh-plugin-whale-mate.svg)](https://www.npmjs.com/package/dsh-plugin-whale-mate)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 **DeepSeek Harness 的 3D 桌宠插件。** 安装后希可儿出现在 Harness 网页里，坐在聊天输入框上沿：会呼吸、眨眼、用眼睛和头跟着鼠标，DeepSeek 思考时托腮，回复时跟着流式文字开口说话；切到桌面模式后还能坐到任意窗口顶边和任务栏上。
@@ -62,15 +64,18 @@
 
 | 来源            | 示例                                                                                       | 说明                                  |
 | --------------- | ------------------------------------------------------------------------------------------ | ------------------------------------- |
-| npm 包名        | `dsh-plugin-whale-mate`                                                                    | 需要该包已发布到 profile 使用的注册表 |
-| GitHub 仓库地址 | `https://github.com/mymde/deepseek-mate.git#v0.6.3` 或 `github:mymde/deepseek-mate#v0.6.3` | 推荐；本仓库目前用这种方式在线安装    |
+| npm 包名        | `dsh-plugin-whale-mate@0.6.3`                                                              | 已发布到 npm：`dsh-plugin-whale-mate` |
+| GitHub 仓库地址 | `https://github.com/mymde/deepseek-mate.git#v0.6.3` 或 `github:mymde/deepseek-mate#v0.6.3` | 本仓库，固定到版本标签                |
 | 本地绝对路径    | `/绝对路径/deepseek-mate` 或 `.tgz`                                                        | 离线安装与开发调试                    |
 
-本项目尚未发布到 npm，所以请在输入框里使用 GitHub 地址（或本地路径）。建议带上版本标签（`#v0.6.3`），重复安装时结果可复现。
+三种都能用。建议带上版本号或标签（`@0.6.3`、`#v0.6.3`），重复安装时结果可复现。
 
 ### DeepSeek Harness Web（`dsh web`）
 
 ```sh
+# 从 npm 安装
+dsh plugin --profile web add dsh-plugin-whale-mate@0.6.3
+
 # 从 GitHub 安装，固定到版本标签
 dsh plugin --profile web add github:mymde/deepseek-mate#v0.6.3
 
@@ -85,11 +90,10 @@ dsh plugin --profile web add /绝对路径/dsh-plugin-whale-mate-0.6.3.tgz
 
 桌面版使用自己的 `desktop` profile，`--profile web` 管不到它。两种方式：
 
-1. 在应用里打开 **插件 → 添加插件**，填仓库地址：
-   `https://github.com/mymde/deepseek-mate.git#v0.6.3`
-   （也可以填包名，或解压后插件目录的绝对路径）；
+1. 在应用里打开 **插件 → 添加插件**，填 `dsh-plugin-whale-mate@0.6.3`、仓库地址
+   `https://github.com/mymde/deepseek-mate.git#v0.6.3`，或解压后插件目录的绝对路径；
 2. 或者用应用自带的 `dsh` 命令（**应用菜单 → 管理 dsh 命令…**）：完全退出桌面版，执行
-   `dsh plugin --profile desktop add github:mymde/deepseek-mate#v0.6.3`，再重新打开应用。
+   `dsh plugin --profile desktop add dsh-plugin-whale-mate@0.6.3`（或 `github:` 形式），再重新打开应用。
 
 ### 升级与卸载
 

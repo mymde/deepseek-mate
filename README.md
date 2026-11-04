@@ -1,5 +1,7 @@
 # 希可儿 · deepseek-mate
 
+[![CI](https://github.com/mymde/deepseek-mate/actions/workflows/ci.yml/badge.svg)](https://github.com/mymde/deepseek-mate/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/dsh-plugin-whale-mate.svg)](https://www.npmjs.com/package/dsh-plugin-whale-mate)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 **A 3D desktop companion (桌宠) for [DeepSeek Harness](https://github.com/deepseek-ai).** Install the plugin and 希可儿 appears in the Harness Web UI, sitting on the chat input box. She breathes, looks at your cursor, reacts while the agent thinks, mouths the streamed reply, and can move out to your real desktop to sit on the top edge of any window or the taskbar.
@@ -60,17 +62,20 @@ The character is fully local: the plugin ships its own Three.js/three-vrm engine
 
 The **添加插件 (Add plugin)** dialog accepts three kinds of source:
 
-| Source                | Example                                                                                    | Notes                                                                |
-| --------------------- | ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------- |
-| npm package name      | `dsh-plugin-whale-mate`                                                                    | works once the package is published to the registry the profile uses |
-| GitHub repository URL | `https://github.com/mymde/deepseek-mate.git#v0.6.3` or `github:mymde/deepseek-mate#v0.6.3` | recommended; this repository currently ships this way                |
-| absolute local path   | `/absolute/path/to/deepseek-mate` or a `.tgz`                                              | offline installs and development                                     |
+| Source                | Example                                                                                    | Notes                                       |
+| --------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------- |
+| npm package name      | `dsh-plugin-whale-mate@0.6.3`                                                              | published on npm as `dsh-plugin-whale-mate` |
+| GitHub repository URL | `https://github.com/mymde/deepseek-mate.git#v0.6.3` or `github:mymde/deepseek-mate#v0.6.3` | this repository, pinned to a tag            |
+| absolute local path   | `/absolute/path/to/deepseek-mate` or a `.tgz`                                              | offline installs and development            |
 
-This project is not published on npm yet, so use the GitHub URL (or a local path) in the dialog. Pin the tag (`#v0.6.3`) so that reinstalling is reproducible.
+All three forms work. Pin a version or a tag (`@0.6.3`, `#v0.6.3`) so that reinstalling is reproducible.
 
 ### DeepSeek Harness Web (`dsh web`)
 
 ```sh
+# from npm
+dsh plugin --profile web add dsh-plugin-whale-mate@0.6.3
+
 # from GitHub, pinned to the release tag
 dsh plugin --profile web add github:mymde/deepseek-mate#v0.6.3
 
@@ -85,11 +90,10 @@ Restart `dsh web` and open the page. 希可儿 sits on the top edge of the chat 
 
 The Desktop app uses its own `desktop` profile, so `--profile web` does not reach it. Either:
 
-1. In the app: **插件 (Plugins) → 添加插件 (Add plugin)**, then enter the repository URL:
-   `https://github.com/mymde/deepseek-mate.git#v0.6.3`
-   (a package name or an absolute path to an unpacked plugin folder also works); or
+1. In the app: **插件 (Plugins) → 添加插件 (Add plugin)**, then enter `dsh-plugin-whale-mate@0.6.3`, the repository URL
+   `https://github.com/mymde/deepseek-mate.git#v0.6.3`, or an absolute path to an unpacked plugin folder; or
 2. With the app's own `dsh` command (**Application menu → Manage dsh Command…**): quit Desktop completely, run
-   `dsh plugin --profile desktop add github:mymde/deepseek-mate#v0.6.3`, then reopen the app.
+   `dsh plugin --profile desktop add dsh-plugin-whale-mate@0.6.3` (or the `github:` form), then reopen the app.
 
 ### Upgrading and removing
 
