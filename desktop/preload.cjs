@@ -8,5 +8,5 @@ contextBridge.exposeInMainWorld('whaleDesktop', {
     const listener = (_e, msg) => fn(msg)
     ipcRenderer.on('whale-mate', listener)
     return () => ipcRenderer.removeListener('whale-mate', listener)
-  },
+  }
 })

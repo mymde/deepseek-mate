@@ -5,7 +5,7 @@
 真实浏览器复现（加载实际 0.5.2 客户端与实际角色菜单，Host 返回可控下载状态）：
 
 ```json
-{"requestSent":true,"menuClosed":true,"runtimeDownloading":true,"feedbackElements":0,"petSuspended":false}
+{ "requestSent": true, "menuClosed": true, "runtimeDownloading": true, "feedbackElements": 0, "petSuspended": false }
 ```
 
 已确认：旧版右键开启无即时反馈，下载进度与启动报错仅能在设置中看到。缺失的自定义 Electron 文件也会导致 start 静默返回。尚未证明用户电脑命中了哪一种。

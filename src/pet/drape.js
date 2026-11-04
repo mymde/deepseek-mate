@@ -13,7 +13,10 @@ const SIT_PITCH = SIT_LEGS.pitch // thigh pitch the morph is built for (the seat
 const FLARE_KEEP = 0.6 // how much of the skirt's flare beyond the thigh is kept on the lap
 const CLEARANCE = 0.012 // m between thigh surface and the innermost cloth layer
 
-const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t) }
+const smooth = (a, b, x) => {
+  const t = Math.min(1, Math.max(0, (x - a) / (b - a)))
+  return t * t * (3 - 2 * t)
+}
 
 let detached = 0
 
@@ -21,7 +24,10 @@ let detached = 0
 export function addSitDrape(vrm) {
   const raw = (name) => vrm.humanoid?.getRawBoneNode(name) ?? null
   const hips = raw('hips')
-  const legs = [['left', raw('leftUpperLeg'), raw('leftLowerLeg')], ['right', raw('rightUpperLeg'), raw('rightLowerLeg')]]
+  const legs = [
+    ['left', raw('leftUpperLeg'), raw('leftLowerLeg')],
+    ['right', raw('rightUpperLeg'), raw('rightLowerLeg')]
+  ]
     .filter(([, thigh, knee]) => thigh && knee)
     .map(([side, thigh, knee]) => ({ side, thigh, knee }))
   if (!hips || legs.length !== 2) return null
@@ -38,10 +44,16 @@ export function addSitDrape(vrm) {
   const gap = Math.abs(left.joint.x - right.joint.x)
 
   const skinned = []
-  vrm.scene.traverse((o) => { if (o.isSkinnedMesh && o.geometry?.attributes?.skinWeight) skinned.push(o) })
+  vrm.scene.traverse((o) => {
+    if (o.isSkinnedMesh && o.geometry?.attributes?.skinWeight) skinned.push(o)
+  })
   // Ribbons, hair ends and cloth with a few percent of stray thigh weight (auto-weighting) are
   // torn into spikes when the legs move: they belong to the body, not the legs.
-  const legBones = new Set(['leftUpperLeg', 'rightUpperLeg', 'leftLowerLeg', 'rightLowerLeg', 'leftFoot', 'rightFoot', 'leftToes', 'rightToes'].map(raw).filter(Boolean))
+  const legBones = new Set(
+    ['leftUpperLeg', 'rightUpperLeg', 'leftLowerLeg', 'rightLowerLeg', 'leftFoot', 'rightFoot', 'leftToes', 'rightToes']
+      .map(raw)
+      .filter(Boolean)
+  )
   detached = 0
   for (const mesh of skinned) detached += pruneStrayWeights(mesh) + detachStrayLegWeights(mesh, legBones, hips)
   const radius = thighRadius(skinned, legs)
@@ -56,7 +68,9 @@ export function addSitDrape(vrm) {
   const turns = legs.map((leg) => {
     const inward = (leg.side === 'left' ? -1 : 1) * SIT_LEGS.inward * (sideSign > 0 ? 1 : -1)
     const thigh = new THREE.Quaternion().setFromEuler(new THREE.Euler(-SIT_PITCH, 0, inward, 'XYZ'))
-    const shin = thigh.clone().multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(SIT_LEGS.knee, 0, 0, 'XYZ')))
+    const shin = thigh
+      .clone()
+      .multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(SIT_LEGS.knee, 0, 0, 'XYZ')))
     return { thigh, shin }
   })
   // Where a point of hip-bound cloth lies when draped over leg k (world, rest frame), or null.
@@ -75,16 +89,25 @@ export function addSitDrape(vrm) {
     // Along the thigh, then (smoothly, so no triangle tears at the knee) hanging past it.
     const bend = smooth(leg.length * 0.8, leg.length * 1.15, a)
     const { thigh: thighTurn, shin: shinTurn } = turns[k]
-    out.set(offset.x, -Math.min(a, leg.length * 1.15), offset.z).applyQuaternion(thighTurn).add(leg.joint)
+    out
+      .set(offset.x, -Math.min(a, leg.length * 1.15), offset.z)
+      .applyQuaternion(thighTurn)
+      .add(leg.joint)
     if (bend > 0) {
       knee.set(0, -leg.length, 0).applyQuaternion(thighTurn).add(leg.joint)
-      hang.set(offset.x, -(a - leg.length), offset.z).applyQuaternion(shinTurn).add(knee)
+      hang
+        .set(offset.x, -(a - leg.length), offset.z)
+        .applyQuaternion(shinTurn)
+        .add(knee)
       out.lerp(hang, bend)
     }
     return out.lerp(p, 1 - blend)
   }
   // Which leg carries a point: a soft split so cloth between the knees follows both.
-  const legShare = (p, k) => { const t = smooth(-gap * 0.3, gap * 0.3, (p.x - center) * sideSign); return k === 0 ? t : 1 - t }
+  const legShare = (p, k) => {
+    const t = smooth(-gap * 0.3, gap * 0.3, (p.x - center) * sideSign)
+    return k === 0 ? t : 1 - t
+  }
 
   const meshes = []
   const box = new THREE.Box3()
@@ -100,7 +123,12 @@ export function addSitDrape(vrm) {
     const unbind = mesh.bindMatrixInverse
     box.makeEmpty()
     let below = 0
-    for (let i = 0; i < pos.count; i++) { if (hipBound[i] < 0.85) continue; v.fromBufferAttribute(pos, i).applyMatrix4(bind); box.expandByPoint(v); if (v.y < left.joint.y - 0.03) below++ }
+    for (let i = 0; i < pos.count; i++) {
+      if (hipBound[i] < 0.85) continue
+      v.fromBufferAttribute(pos, i).applyMatrix4(bind)
+      box.expandByPoint(v)
+      if (v.y < left.joint.y - 0.03) below++
+    }
     if (below < 3) continue
     // Small rigid pieces (bows, buttons, charms) move as a whole with the cloth under them.
     const whole = hipBound.every((x) => x >= 0.85)
@@ -114,7 +142,11 @@ export function addSitDrape(vrm) {
         const part = legShare(centre, k)
         if (part < 1e-3 || !drapeTarget(centre, k, target)) continue
         const shift = target.applyMatrix4(unbind).sub(origin.copy(centre).applyMatrix4(unbind)).multiplyScalar(part)
-        for (let i = 0; i < pos.count; i++) { d[i * 3] = shift.x; d[i * 3 + 1] = shift.y; d[i * 3 + 2] = shift.z }
+        for (let i = 0; i < pos.count; i++) {
+          d[i * 3] = shift.x
+          d[i * 3 + 1] = shift.y
+          d[i * 3 + 2] = shift.z
+        }
         moved++
         continue
       }
@@ -137,7 +169,11 @@ export function addSitDrape(vrm) {
     const before = morphs.position?.length ?? 0
     morphs.position ??= []
     // three.js needs normal morphs for every target once any target has them.
-    if (!morphs.normal) morphs.normal = Array.from({ length: before }, () => new THREE.BufferAttribute(new Float32Array(pos.count * 3), 3))
+    if (!morphs.normal)
+      morphs.normal = Array.from(
+        { length: before },
+        () => new THREE.BufferAttribute(new Float32Array(pos.count * 3), 3)
+      )
     if (morphs.normal.length !== before) continue
     const first = before
     deltas.forEach((d, k) => {
@@ -184,7 +220,7 @@ export function addSitDrape(vrm) {
         mesh.morphTargetInfluences[first] = weights[0]
         mesh.morphTargetInfluences[first + 1] = weights[1]
       }
-    },
+    }
   }
 }
 
@@ -197,7 +233,11 @@ function vertexShares(g, skeleton, bones) {
   for (let i = 0; i < w.count; i++) {
     let hit = 0
     let total = 0
-    for (let c = 0; c < 4; c++) { const x = w.getComponent(i, c); total += x; if (on.has(idx.getComponent(i, c))) hit += x }
+    for (let c = 0; c < 4; c++) {
+      const x = w.getComponent(i, c)
+      total += x
+      if (on.has(idx.getComponent(i, c))) hit += x
+    }
     out[i] = total ? hit / total : 0
   }
   return out
@@ -266,7 +306,8 @@ function normalDeltas(g, deltas) {
   const n0 = base.attributes.normal.array
   // Both legs draped (the seated shape); each leg takes its own share of the change.
   const moved = new Float32Array(pos.count * 3)
-  for (let i = 0; i < pos.count; i++) for (let c = 0; c < 3; c++) moved[i * 3 + c] = pos.getComponent(i, c) + deltas[0][i * 3 + c] + deltas[1][i * 3 + c]
+  for (let i = 0; i < pos.count; i++)
+    for (let c = 0; c < 3; c++) moved[i * 3 + c] = pos.getComponent(i, c) + deltas[0][i * 3 + c] + deltas[1][i * 3 + c]
   const draped = new THREE.BufferGeometry()
   draped.setIndex(g.index)
   draped.setAttribute('position', new THREE.BufferAttribute(moved, 3))
@@ -297,27 +338,41 @@ function detachStrayLegWeights(mesh, legBones, hips) {
   if (!leg.size) return 0
   let legWeight = 0
   let total = 0
-  for (let i = 0; i < w.count; i++) for (let c = 0; c < 4; c++) { const x = w.getComponent(i, c); total += x; if (leg.has(idx.getComponent(i, c))) legWeight += x }
+  for (let i = 0; i < w.count; i++)
+    for (let c = 0; c < 4; c++) {
+      const x = w.getComponent(i, c)
+      total += x
+      if (leg.has(idx.getComponent(i, c))) legWeight += x
+    }
   if (!total || legWeight / total >= 0.25) return 0
   const hipIndex = bones.indexOf(hips)
   let changed = 0
   for (let i = 0; i < w.count; i++) {
     let rest = 0
     let stray = 0
-    for (let c = 0; c < 4; c++) { const x = w.getComponent(i, c); if (leg.has(idx.getComponent(i, c))) stray += x; else rest += x }
+    for (let c = 0; c < 4; c++) {
+      const x = w.getComponent(i, c)
+      if (leg.has(idx.getComponent(i, c))) stray += x
+      else rest += x
+    }
     if (stray <= 0) continue
     for (let c = 0; c < 4; c++) {
-      if (leg.has(idx.getComponent(i, c))) { w.setComponent(i, c, 0) }
-      else if (rest > 0.01) w.setComponent(i, c, w.getComponent(i, c) / rest)
+      if (leg.has(idx.getComponent(i, c))) {
+        w.setComponent(i, c, 0)
+      } else if (rest > 0.01) w.setComponent(i, c, w.getComponent(i, c) / rest)
     }
     if (rest <= 0.01) {
       if (hipIndex < 0) continue
-      idx.setComponent(i, 0, hipIndex); w.setComponent(i, 0, 1)
+      idx.setComponent(i, 0, hipIndex)
+      w.setComponent(i, 0, 1)
       for (let c = 1; c < 4; c++) w.setComponent(i, c, 0)
     }
     changed++
   }
-  if (changed) { idx.needsUpdate = true; w.needsUpdate = true }
+  if (changed) {
+    idx.needsUpdate = true
+    w.needsUpdate = true
+  }
   return changed
 }
 
@@ -335,22 +390,48 @@ function pruneStrayWeights(mesh) {
   if (!bones.length) return 0
   const totals = new Float64Array(bones.length)
   let total = 0
-  for (let i = 0; i < w.count; i++) for (let c = 0; c < 4; c++) { const x = w.getComponent(i, c); totals[idx.getComponent(i, c)] += x; total += x }
+  for (let i = 0; i < w.count; i++)
+    for (let c = 0; c < 4; c++) {
+      const x = w.getComponent(i, c)
+      totals[idx.getComponent(i, c)] += x
+      total += x
+    }
   if (!total) return 0
   const minor = new Set()
-  totals.forEach((x, b) => { if (x > 0 && x / total < 0.06) minor.add(b) })
+  totals.forEach((x, b) => {
+    if (x > 0 && x / total < 0.06) minor.add(b)
+  })
   if (!minor.size) return 0
-  const depth = (bone) => { let d = 0; for (let b = bone; b; b = b.parent) d++; return d }
+  const depth = (bone) => {
+    let d = 0
+    for (let b = bone; b; b = b.parent) d++
+    return d
+  }
   const near = new Map()
   const close = (a, b) => {
     const key = a * 4096 + b
     if (near.has(key)) return near.get(key)
     // Distance in the bone tree through the nearest common ancestor.
-    let x = bones[a], y = bones[b], steps = 0
-    let dx = depth(x), dy = depth(y)
-    while (dx > dy) { x = x.parent; dx--; steps++ }
-    while (dy > dx) { y = y.parent; dy--; steps++ }
-    while (x !== y && x && y) { x = x.parent; y = y.parent; steps += 2 }
+    let x = bones[a],
+      y = bones[b],
+      steps = 0
+    let dx = depth(x),
+      dy = depth(y)
+    while (dx > dy) {
+      x = x.parent
+      dx--
+      steps++
+    }
+    while (dy > dx) {
+      y = y.parent
+      dy--
+      steps++
+    }
+    while (x !== y && x && y) {
+      x = x.parent
+      y = y.parent
+      steps += 2
+    }
     const ok = x === y && steps <= 2
     near.set(key, ok)
     return ok
@@ -379,10 +460,18 @@ function pruneStrayWeights(mesh) {
     const index = g.index
     const neighbours = Array.from({ length: w.count }, () => [])
     for (let t = 0; t < index.count; t += 3) {
-      const a = index.getX(t), b = index.getX(t + 1), c = index.getX(t + 2)
-      neighbours[a].push(b, c); neighbours[b].push(a, c); neighbours[c].push(a, b)
+      const a = index.getX(t),
+        b = index.getX(t + 1),
+        c = index.getX(t + 2)
+      neighbours[a].push(b, c)
+      neighbours[b].push(a, c)
+      neighbours[c].push(a, b)
     }
-    const mainOf = (v) => { let m = 0; for (let c = 1; c < 4; c++) if (w.getComponent(v, c) > w.getComponent(v, m)) m = c; return idx.getComponent(v, m) }
+    const mainOf = (v) => {
+      let m = 0
+      for (let c = 1; c < 4; c++) if (w.getComponent(v, c) > w.getComponent(v, m)) m = c
+      return idx.getComponent(v, m)
+    }
     for (let pass = 0; pass < 3; pass++) {
       let fixed = 0
       for (let v = 0; v < w.count; v++) {
@@ -391,18 +480,32 @@ function pruneStrayWeights(mesh) {
         const m = mainOf(v)
         if (!minor.has(m)) continue
         const votes = new Map()
-        for (const n of list) { const b = mainOf(n); votes.set(b, (votes.get(b) ?? 0) + 1) }
-        let best = -1, bestVotes = 0
-        for (const [b, n] of votes) if (n > bestVotes) { best = b; bestVotes = n }
+        for (const n of list) {
+          const b = mainOf(n)
+          votes.set(b, (votes.get(b) ?? 0) + 1)
+        }
+        let best = -1,
+          bestVotes = 0
+        for (const [b, n] of votes)
+          if (n > bestVotes) {
+            best = b
+            bestVotes = n
+          }
         if (best === m || bestVotes < list.length * 0.6 || close(m, best)) continue
         const donor = list.find((n) => mainOf(n) === best)
-        for (let c = 0; c < 4; c++) { idx.setComponent(v, c, idx.getComponent(donor, c)); w.setComponent(v, c, w.getComponent(donor, c)) }
+        for (let c = 0; c < 4; c++) {
+          idx.setComponent(v, c, idx.getComponent(donor, c))
+          w.setComponent(v, c, w.getComponent(donor, c))
+        }
         fixed++
       }
       changed += fixed
       if (!fixed) break
     }
   }
-  if (changed) { idx.needsUpdate = true; w.needsUpdate = true }
+  if (changed) {
+    idx.needsUpdate = true
+    w.needsUpdate = true
+  }
   return changed
 }

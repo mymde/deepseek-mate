@@ -1,15 +1,18 @@
 # 素材来源与使用说明
 
+[English](ASSET_LICENSES.en.md)
+
 ## DeepSeek Reset 模型（`deepseek-reset.vrm`，默认角色）
+
 - **使用本模型请注明 B站 @hihihihi202**：https://space.bilibili.com/3546568969947566
 - 原作者允许修改，**禁止商用**。本插件免费开源，不收取任何费用；转载、二次分发请保留本段说明。
 - 本插件中的版本由 `DeepSeek_Reset_4K_Lite.blend` 重新导出：朝向修正、HoYoverse/Genshin 卡通材质烘焙为 MToon、表情绑定到原有形态键、去除重复描边网格。导出脚本见 `scripts/blender/export-deepseek-reset.py`。
 - VRM 元数据已写入：作者 hihihihi202 (bilibili)、个人非营利、需署名、允许修改与再分发。
 
-
 ## 希可儿模型（`whale-maid.vrm`，可选）
 
 ### 基础模型
+
 - Victoria Rubin / VRoid Studio β AvatarSample_4，pixiv Inc.
 - 模型下载镜像：https://github.com/madjin/vrm-samples/blob/master/vroid/beta/Victoria_Rubin.vrm
 - 官方许可：https://vroid.pixiv.help/hc/en-us/articles/360014900233
@@ -17,13 +20,16 @@
 - 当前角色保留其面部、表情、人体、骨架及部分头发；新增深蓝女仆服、围裙、头饰、长发、鳍耳、鲸尾。
 
 ## 参考图及衍生角色
+
 参考图来自本次用户上传，仅用于本次原型制作。其角色和图像权利不因底模为 CC0 而转为 CC0。若对外发行，应按参考图权利人的授权范围使用。
 
 ## 代码依赖
+
 预览器使用 Three.js 0.169.0、@pixiv/three-vrm 3.3.3，均使用 MIT 许可证；许可证保存在 vendor 目录。
 桌面模式使用 Electron（MIT）。插件本身不包含 Electron，只在用户开启桌面模式时从官方发布（或其镜像 npmmirror）下载，并按 SHASUMS256.txt 校验。构建需要 Blender 4.2.3 和 VRM Add-on 4.10.3。
 
 ## 当前范围
+
 这是模板改造原型。VRM 包含骨骼和表情，动作由预览页面实时驱动，在 DeepSeek Harness 插件中本地运行；不包含 Unity 工程、额外的对话服务或独立桌宠安装包。长裙暂不支持坐下和大步行走；尾鳍与长发末端使用简化弹簧，未完成完整碰撞配置。
 
 ## 0.5.5 本地试用动作（`public/motions.json`）
@@ -37,14 +43,12 @@
 - 转换方式：根据 `.meta` 的真实参考骨架，将采样后的全局旋转差转换成人形局部四元数；51 个骨骼通道，包含手指，30 fps；保留来源文件 SHA-256。不是把 Unity muscle 数值直接当欧拉角。
 - 限制：行走 FBX 存在多个动画层，当前 Three.js FBXLoader 仅读取首层；本地预览已能看到步态，但不宣称与 Unity 所有层完全一致。此次尚未移植 Mate-Engine 的 Humanoid `.anim`，也未实现通用 `.vmd` 腿部 IK 求解。
 
-
 ## 0.5.6 动作库扩展来源
 
 - Mate-Engine（Shiny），commit `2c5ea6b8f4cf5e1773a0816b46d9267cda5174d4`；GI-Engine commit 与上节相同。
 - 包含 AGIA 的 14 个 FBX 片段转换结果，以及两个仓库按 SHA-256 去重后的 9 个表情曲线转换结果。每项的原路径、原文件哈希与重复来源保存在 `public/motions.json` 的 `clips` / `catalog` 中。
 - Mate-Engine 原许可证副本：`public/animation-notices/Mate-Engine-LICENSE.md`。上节 AGIA、Shiny 与 GI-Engine 的素材条款同样适用；转换后的动画与表情不改标为 MIT。
 - 目录中的待转换资源只保留文件名、哈希和状态，未把它们打包为动画数据。UI 不显示授权说明，原始声明保留在包内供统一整理。
-
 
 ## 0.5.7 新增 Quaternius 动作
 

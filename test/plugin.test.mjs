@@ -6,18 +6,39 @@ import { mountRoutes, toolDefinitions, BASE, ACTIONS, EXPRESSIONS, apply } from 
 
 function fakeServer() {
   const routes = new Map()
-  return { routes, register(r) { routes.set(r.path, r); return () => routes.delete(r.path) } }
+  return {
+    routes,
+    register(r) {
+      routes.set(r.path, r)
+      return () => routes.delete(r.path)
+    }
+  }
 }
 
 function call(route, { method = 'GET', headers = {} } = {}) {
   return new Promise((resolve) => {
     const chunks = []
     const res = {
-      statusCode: 0, headers: {},
-      writeHead(code, h = {}) { this.statusCode = code; this.headers = h },
-      write(c) { chunks.push(c) }, on() {}, once() {}, emit() {}, removeListener() {},
-      end(c) { if (c) chunks.push(c); resolve({ status: this.statusCode, headers: this.headers, size: chunks.reduce((n, c) => n + c.length, 0) }) },
-      destroy() { resolve({ status: -1 }) },
+      statusCode: 0,
+      headers: {},
+      writeHead(code, h = {}) {
+        this.statusCode = code
+        this.headers = h
+      },
+      write(c) {
+        chunks.push(c)
+      },
+      on() {},
+      once() {},
+      emit() {},
+      removeListener() {},
+      end(c) {
+        if (c) chunks.push(c)
+        resolve({ status: this.statusCode, headers: this.headers, size: chunks.reduce((n, c) => n + c.length, 0) })
+      },
+      destroy() {
+        resolve({ status: -1 })
+      }
     }
     // createReadStream(...).pipe(res) calls write/end on res.
     route.handler({ method, headers }, res)
@@ -34,14 +55,20 @@ test('serves exactly the bundled files under /whale-mate/, with auth fence', asy
   const ok = await call(server.routes.get(BASE + 'pet.js'), { headers: { cookie: 'x' } })
   assert.equal(ok.status, 200)
   assert.match(ok.headers['Content-Type'], /javascript/)
-  assert.equal((await call(server.routes.get(BASE + 'pet.js'), { method: 'POST', headers: { cookie: 'x' } })).status, 405)
+  assert.equal(
+    (await call(server.routes.get(BASE + 'pet.js'), { method: 'POST', headers: { cookie: 'x' } })).status,
+    405
+  )
   dispose()
   assert.equal(server.routes.size, 0)
 })
 
 test('tool definitions: names, enums and no-op execution', async () => {
   const tools = toolDefinitions((d) => d)
-  assert.deepEqual(tools.map((t) => t.name), ['pet_say', 'pet_expression', 'pet_action'])
+  assert.deepEqual(
+    tools.map((t) => t.name),
+    ['pet_say', 'pet_expression', 'pet_action']
+  )
   assert.deepEqual(tools[2].parameters.name.enum, ACTIONS)
   assert.deepEqual(tools[1].parameters.name.enum, EXPRESSIONS)
   for (const t of tools) assert.deepEqual(await t.execute({}), { ok: true })
@@ -55,10 +82,25 @@ test('apply() can skip tools by config', () => {
 
 test('client module registers a cordis plugin with the package id', () => {
   let loaded
-  const sandbox = { window: { __ModuleLoader__: { load: (m) => { loaded = m } } }, console, URL, document: { baseURI: 'http://x/' } }
+  const sandbox = {
+    window: {
+      __ModuleLoader__: {
+        load: (m) => {
+          loaded = m
+        }
+      }
+    },
+    console,
+    URL,
+    document: { baseURI: 'http://x/' }
+  }
   vm.runInNewContext(readFileSync(new URL('../client/client.js', import.meta.url), 'utf8'), sandbox)
   assert.equal(loaded.id, 'dsh-plugin-whale-mate')
-  const plugin = loaded.factory((name) => { if (name === 'react') return { createElement: () => null, useState: () => [0, () => {}], useSyncExternalStore: (s, g) => g() }; throw new Error(name) })
+  const plugin = loaded.factory((name) => {
+    if (name === 'react')
+      return { createElement: () => null, useState: () => [0, () => {}], useSyncExternalStore: (s, g) => g() }
+    throw new Error(name)
+  })
   assert.deepEqual([...plugin.inject], ['slots', 'sessions'])
   assert.equal(typeof plugin.apply, 'function')
 })

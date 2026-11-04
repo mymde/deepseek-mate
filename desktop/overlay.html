@@ -1,141 +1,225 @@
 <!doctype html>
 <html lang="zh">
-<head>
-<meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' blob: data:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self' blob: data:">
-<title>Whale Mate</title>
-<style>html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden;user-select:none}</style>
-</head>
-<body>
-<script type="module">
-const bridge = window.whaleDesktop
-const report = (message) => bridge?.send({ type: 'error', message: String(message) })
-addEventListener('error', (e) => report(e.message))
-addEventListener('unhandledrejection', (e) => report(e.reason?.stack ?? e.reason))
-try {
-  const mod = await import('./pet.js')
-  const harness = mod.virtualSurface('harness-window')
-  // The Harness chat composer, on the desktop: her home, as in the page.
-  const composer = mod.virtualSurface('composer')
-  // Parts of the Harness top edge / composer hidden by windows in front of Harness (Windows only),
-  // relative to the rectangle's left edge; null = nothing in front.
-  const hostSpans = { window: null, composer: null }
-  let lastWin = null
-  let lastHome = null
-  const absolute = (spans, r) => (spans && r ? spans.map(([a, b]) => [r.left + a, r.left + b]) : null)
-  const placeHost = () => {
-    harness.set(lastWin, absolute(hostSpans.window, lastWin))
-    composer.set(lastHome, absolute(hostSpans.composer, lastHome))
-  }
-  let hostHidden = true
-  let seated = false
-  const size = Number(new URLSearchParams(location.search).get('size')) || 360
-  // Other applications' windows (front to back), keyed by window id; see desktop/windows.cjs.
-  const windows = new Map()
-  let windowOrder = []
-  const event = (name, data) => bridge.send({ type: 'event', name, data })
-  const pet = await mod.createPet({
-    modelUrl: new URL('model.vrm', location.href).href,
-    persist: false,
-    saved: { size, visible: true, floorX: 0.82 },
-    findHome: () => (composer.isConnected ? composer : harness.isConnected ? harness : null),
-    surfaces: () => [composer, harness, ...windowOrder],
-    onCapture: (on) => bridge.send({ type: 'capture', on }),
-    onEvent: (name, data) => event(name, data),
-    // Where she sits is changed by dragging her; the menu only switches mode or hides her.
-    menuItems: () => [
-      { id: 'mode', label: '窗口模式', title: '切换到窗口模式', run: () => event('exit', {}) },
-      { id: 'hide', label: '隐藏', title: '隐藏希可儿', run: () => { pet.setVisible(false); event('hidden', {}) } },
-    ],
-  })
-  pet.setSuspended(true)
-  let lastSize = pet.size
-  // Right-click size changes also need to update the available headroom.
-  const originalSetSize = pet.setSize.bind(pet)
-  pet.setSize = size => { originalSetSize(size); if (lastSize !== pet.size) { lastSize = pet.size; bridge.send({ type: 'size', size: pet.size }) } }
-  window.__whaleMate = pet
-  // Hop onto the nearest other window whose top edge has room (menu, and the test hook).
-  const hopToWindow = () => {
-    const current = pet.perch?.el
-    const candidates = windowOrder.filter(w => w !== current && w.isConnected && w.spans().some(([a, b]) => b - a >= pet.box.w * 0.5) && w.getBoundingClientRect().top >= pet.minPerchTop())
-    if (!candidates.length) { pet.say('附近没有能坐的窗口……', { expression: 'sad' }); return false }
-    const spot = w => { const [a, b] = w.spans().reduce((m, s) => (s[1] - s[0] > m[1] - m[0] ? s : m)); return { x: (a + b) / 2, y: w.getBoundingClientRect().top } }
-    const best = candidates.map(w => ({ w, ...spot(w) })).sort((p, q) => Math.hypot(p.x - pet.anchor.x, p.y - pet.anchor.y) - Math.hypot(q.x - pet.anchor.x, q.y - pet.anchor.y))[0]
-    pet.closeMenu()
-    return pet.jumpTo(best.x, best.y)
-  }
-  window.__whaleHop = hopToWindow
-  // The window she sits on is polled faster so dragging it carries her smoothly.
-  let reportedPerch
-  setInterval(() => {
-    const id = pet.perch?.el?.windowId ?? null
-    if (id !== reportedPerch) { reportedPerch = id; bridge.send({ type: 'perch', id }) }
-  }, 100)
-  if (new URLSearchParams(location.search).get('shape') === '1') {
-    // Input shape (Linux): the areas that must take the mouse, refreshed when they change.
-    let last = ''
-    const pad = 6
-    const tick = () => {
-      const rects = []
-      if (pet.visible && pet.boxRect) rects.push({ x: pet.boxRect.left, y: pet.boxRect.top, width: pet.box.w, height: pet.box.h })
-      for (const el of [pet.bubble, pet.menu]) if (!el.hidden) { const r = el.getBoundingClientRect(); rects.push({ x: r.left - pad, y: r.top - pad, width: r.width + pad * 2, height: r.height + pad * 2 }) }
-      if (!pet.menu.hidden) rects.push({ x: 0, y: 0, width: innerWidth, height: innerHeight }) // click anywhere closes it
-      if (!rects.length) rects.push({ x: 0, y: 0, width: 1, height: 1 })
-      const key = JSON.stringify(rects.map((r) => [r.x, r.y, r.width, r.height].map(Math.round)))
-      if (key !== last) { last = key; bridge.send({ type: 'shape', rects }) }
-      requestAnimationFrame(tick)
-    }
-    requestAnimationFrame(tick)
-  }
-  bridge.on((msg) => {
-    if (msg.type === 'cursor') pet.feedCursor(msg.x, msg.y)
-    else if (msg.type === 'geometry') {
-      hostHidden = !!msg.hidden || !msg.win
-      if (msg.free) {
-        // She lives on the desktop: a hidden Harness just removes its perches (she drops down).
-        pet.setSuspended(false)
-        lastWin = hostHidden ? null : msg.win
-        lastHome = hostHidden ? null : msg.home ?? null
-        placeHost()
-        if (!hostHidden && !seated) { pet.recall(); seated = true }
-      } else {
-        pet.setSuspended(hostHidden)
-        // Preserve the same surfaces while minimised, so restoring follows the window immediately.
-        if (!hostHidden) {
-          lastWin = msg.win
-          lastHome = msg.home ?? null
-          placeHost()
-          if (!seated) { pet.recall(); seated = true }
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self' blob: data:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self' blob: data:"
+    />
+    <title>Whale Mate</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        background: transparent;
+        overflow: hidden;
+        user-select: none;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      const bridge = window.whaleDesktop
+      const report = (message) => bridge?.send({ type: 'error', message: String(message) })
+      addEventListener('error', (e) => report(e.message))
+      addEventListener('unhandledrejection', (e) => report(e.reason?.stack ?? e.reason))
+      try {
+        const mod = await import('./pet.js')
+        const harness = mod.virtualSurface('harness-window')
+        // The Harness chat composer, on the desktop: her home, as in the page.
+        const composer = mod.virtualSurface('composer')
+        // Parts of the Harness top edge / composer hidden by windows in front of Harness (Windows only),
+        // relative to the rectangle's left edge; null = nothing in front.
+        const hostSpans = { window: null, composer: null }
+        let lastWin = null
+        let lastHome = null
+        const absolute = (spans, r) => (spans && r ? spans.map(([a, b]) => [r.left + a, r.left + b]) : null)
+        const placeHost = () => {
+          harness.set(lastWin, absolute(hostSpans.window, lastWin))
+          composer.set(lastHome, absolute(hostSpans.composer, lastHome))
         }
+        let hostHidden = true
+        let seated = false
+        const size = Number(new URLSearchParams(location.search).get('size')) || 360
+        // Other applications' windows (front to back), keyed by window id; see desktop/windows.cjs.
+        const windows = new Map()
+        let windowOrder = []
+        const event = (name, data) => bridge.send({ type: 'event', name, data })
+        const pet = await mod.createPet({
+          modelUrl: new URL('model.vrm', location.href).href,
+          persist: false,
+          saved: { size, visible: true, floorX: 0.82 },
+          findHome: () => (composer.isConnected ? composer : harness.isConnected ? harness : null),
+          surfaces: () => [composer, harness, ...windowOrder],
+          onCapture: (on) => bridge.send({ type: 'capture', on }),
+          onEvent: (name, data) => event(name, data),
+          // Where she sits is changed by dragging her; the menu only switches mode or hides her.
+          menuItems: () => [
+            { id: 'mode', label: '窗口模式', title: '切换到窗口模式', run: () => event('exit', {}) },
+            {
+              id: 'hide',
+              label: '隐藏',
+              title: '隐藏希可儿',
+              run: () => {
+                pet.setVisible(false)
+                event('hidden', {})
+              }
+            }
+          ]
+        })
+        pet.setSuspended(true)
+        let lastSize = pet.size
+        // Right-click size changes also need to update the available headroom.
+        const originalSetSize = pet.setSize.bind(pet)
+        pet.setSize = (size) => {
+          originalSetSize(size)
+          if (lastSize !== pet.size) {
+            lastSize = pet.size
+            bridge.send({ type: 'size', size: pet.size })
+          }
+        }
+        window.__whaleMate = pet
+        // Hop onto the nearest other window whose top edge has room (menu, and the test hook).
+        const hopToWindow = () => {
+          const current = pet.perch?.el
+          const candidates = windowOrder.filter(
+            (w) =>
+              w !== current &&
+              w.isConnected &&
+              w.spans().some(([a, b]) => b - a >= pet.box.w * 0.5) &&
+              w.getBoundingClientRect().top >= pet.minPerchTop()
+          )
+          if (!candidates.length) {
+            pet.say('附近没有能坐的窗口……', { expression: 'sad' })
+            return false
+          }
+          const spot = (w) => {
+            const [a, b] = w.spans().reduce((m, s) => (s[1] - s[0] > m[1] - m[0] ? s : m))
+            return { x: (a + b) / 2, y: w.getBoundingClientRect().top }
+          }
+          const best = candidates
+            .map((w) => ({ w, ...spot(w) }))
+            .sort(
+              (p, q) =>
+                Math.hypot(p.x - pet.anchor.x, p.y - pet.anchor.y) - Math.hypot(q.x - pet.anchor.x, q.y - pet.anchor.y)
+            )[0]
+          pet.closeMenu()
+          return pet.jumpTo(best.x, best.y)
+        }
+        window.__whaleHop = hopToWindow
+        // The window she sits on is polled faster so dragging it carries her smoothly.
+        let reportedPerch
+        setInterval(() => {
+          const id = pet.perch?.el?.windowId ?? null
+          if (id !== reportedPerch) {
+            reportedPerch = id
+            bridge.send({ type: 'perch', id })
+          }
+        }, 100)
+        if (new URLSearchParams(location.search).get('shape') === '1') {
+          // Input shape (Linux): the areas that must take the mouse, refreshed when they change.
+          let last = ''
+          const pad = 6
+          const tick = () => {
+            const rects = []
+            if (pet.visible && pet.boxRect)
+              rects.push({ x: pet.boxRect.left, y: pet.boxRect.top, width: pet.box.w, height: pet.box.h })
+            for (const el of [pet.bubble, pet.menu])
+              if (!el.hidden) {
+                const r = el.getBoundingClientRect()
+                rects.push({ x: r.left - pad, y: r.top - pad, width: r.width + pad * 2, height: r.height + pad * 2 })
+              }
+            if (!pet.menu.hidden) rects.push({ x: 0, y: 0, width: innerWidth, height: innerHeight }) // click anywhere closes it
+            if (!rects.length) rects.push({ x: 0, y: 0, width: 1, height: 1 })
+            const key = JSON.stringify(rects.map((r) => [r.x, r.y, r.width, r.height].map(Math.round)))
+            if (key !== last) {
+              last = key
+              bridge.send({ type: 'shape', rects })
+            }
+            requestAnimationFrame(tick)
+          }
+          requestAnimationFrame(tick)
+        }
+        bridge.on((msg) => {
+          if (msg.type === 'cursor') pet.feedCursor(msg.x, msg.y)
+          else if (msg.type === 'geometry') {
+            hostHidden = !!msg.hidden || !msg.win
+            if (msg.free) {
+              // She lives on the desktop: a hidden Harness just removes its perches (she drops down).
+              pet.setSuspended(false)
+              lastWin = hostHidden ? null : msg.win
+              lastHome = hostHidden ? null : (msg.home ?? null)
+              placeHost()
+              if (!hostHidden && !seated) {
+                pet.recall()
+                seated = true
+              }
+            } else {
+              pet.setSuspended(hostHidden)
+              // Preserve the same surfaces while minimised, so restoring follows the window immediately.
+              if (!hostHidden) {
+                lastWin = msg.win
+                lastHome = msg.home ?? null
+                placeHost()
+                if (!seated) {
+                  pet.recall()
+                  seated = true
+                }
+              }
+            }
+          } else if (msg.type === 'windows' && Array.isArray(msg.list)) {
+            const seen = new Set()
+            windowOrder = []
+            for (const w of msg.list) {
+              if (typeof w?.id !== 'string') continue
+              seen.add(w.id)
+              let s = windows.get(w.id)
+              if (!s) {
+                s = mod.virtualSurface('window')
+                s.windowId = w.id
+                windows.set(w.id, s)
+              }
+              s.set(w, w.spans)
+              windowOrder.push(s)
+            }
+            for (const [id, s] of windows)
+              if (!seen.has(id)) {
+                s.set(null)
+                windows.delete(id)
+              }
+            hostSpans.window = msg.host?.window ?? null
+            hostSpans.composer = msg.host?.composer ?? null
+            placeHost()
+          } else if (msg.type === 'visible') {
+            if (msg.on) pet.recall()
+            else pet.setVisible(false)
+          } else if (msg.type === 'cmd' && typeof pet[msg.method] === 'function' && ALLOWED.has(msg.method))
+            pet[msg.method](...(Array.isArray(msg.args) ? msg.args : []))
+        })
+        bridge.send({ type: 'ready' })
+      } catch (e) {
+        report(e?.stack ?? e)
       }
-    }
-    else if (msg.type === 'windows' && Array.isArray(msg.list)) {
-      const seen = new Set()
-      windowOrder = []
-      for (const w of msg.list) {
-        if (typeof w?.id !== 'string') continue
-        seen.add(w.id)
-        let s = windows.get(w.id)
-        if (!s) { s = mod.virtualSurface('window'); s.windowId = w.id; windows.set(w.id, s) }
-        s.set(w, w.spans)
-        windowOrder.push(s)
-      }
-      for (const [id, s] of windows) if (!seen.has(id)) { s.set(null); windows.delete(id) }
-      hostSpans.window = msg.host?.window ?? null
-      hostSpans.composer = msg.host?.composer ?? null
-      placeHost()
-    }
-    else if (msg.type === 'visible') { if (msg.on) pet.recall(); else pet.setVisible(false) }
-    else if (msg.type === 'cmd' && typeof pet[msg.method] === 'function' && ALLOWED.has(msg.method)) pet[msg.method](...(Array.isArray(msg.args) ? msg.args : []))
-  })
-  bridge.send({ type: 'ready' })
-} catch (e) {
-  report(e?.stack ?? e)
-}
-</script>
-<script>
-// Methods the Harness page may call on the overlay pet (same names as the in-page pet).
-var ALLOWED = new Set(['say', 'setThinking', 'streamReply', 'finishReply', 'noticeUserMessage', 'expression', 'action', 'setSize', 'recall', 'setVisible', 'openMotionMenu', 'setFavorites', 'playChoice'])
-</script>
-</body>
+    </script>
+    <script>
+      // Methods the Harness page may call on the overlay pet (same names as the in-page pet).
+      var ALLOWED = new Set([
+        'say',
+        'setThinking',
+        'streamReply',
+        'finishReply',
+        'noticeUserMessage',
+        'expression',
+        'action',
+        'setSize',
+        'recall',
+        'setVisible',
+        'openMotionMenu',
+        'setFavorites',
+        'playChoice'
+      ])
+    </script>
+  </body>
 </html>

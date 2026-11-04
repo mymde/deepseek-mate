@@ -1,51 +1,31 @@
 {
- "Head_Skin - rebuilt mouth": {
-  "baseColorTexture": {
-   "image": "颜"
+  "Head_Skin - rebuilt mouth": {
+    "baseColorTexture": {
+      "image": "颜"
+    },
+    "baseColorFactor": [1, 1, 1, 1]
   },
-  "baseColorFactor": [
-   1,
-   1,
-   1,
-   1
-  ]
- },
- "Hair.002": {
-  "baseColorTexture": {
-   "image": "TripoTrial_Hair_BaseColor",
-   "sampler": 2
+  "Hair.002": {
+    "baseColorTexture": {
+      "image": "TripoTrial_Hair_BaseColor",
+      "sampler": 2
+    },
+    "baseColorFactor": [1, 1, 1, 1]
   },
-  "baseColorFactor": [
-   1,
-   1,
-   1,
-   1
-  ]
- },
- "Iris_L.001": {
-  "baseColorTexture": {
-   "image": "iris_L"
+  "Iris_L.001": {
+    "baseColorTexture": {
+      "image": "iris_L"
+    },
+    "baseColorFactor": [1, 1, 1, 1],
+    "alphaMode": "MASK",
+    "alphaCutoff": 0.5
   },
-  "baseColorFactor": [
-   1,
-   1,
-   1,
-   1
-  ],
-  "alphaMode": "MASK",
-  "alphaCutoff": 0.5
- },
- "Iris_R.001": {
-  "baseColorTexture": {
-   "image": "iris_R"
-  },
-  "baseColorFactor": [
-   1,
-   1,
-   1,
-   1
-  ],
-  "alphaMode": "MASK",
-  "alphaCutoff": 0.5
- }
+  "Iris_R.001": {
+    "baseColorTexture": {
+      "image": "iris_R"
+    },
+    "baseColorFactor": [1, 1, 1, 1],
+    "alphaMode": "MASK",
+    "alphaCutoff": 0.5
+  }
 }

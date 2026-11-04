@@ -13,9 +13,15 @@ export function serve(port = 0) {
       try {
         const s = statSync(file)
         if (!s.isFile()) throw new Error()
-        res.writeHead(200, { 'content-type': types[extname(file)] ?? 'application/octet-stream', 'content-length': s.size })
+        res.writeHead(200, {
+          'content-type': types[extname(file)] ?? 'application/octet-stream',
+          'content-length': s.size
+        })
         createReadStream(file).pipe(res)
-      } catch { res.writeHead(404); res.end() }
+      } catch {
+        res.writeHead(404)
+        res.end()
+      }
     })
     server.listen(port, '127.0.0.1', () => resolve(server))
   })

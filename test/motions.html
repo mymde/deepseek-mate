@@ -1,11 +1,132 @@
-<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>鲸汐 · 动作预览</title><style>body{margin:0;background:#eef2fa;color:#263653;font:15px/1.6 system-ui;overflow:hidden}.panel{position:fixed;left:28px;top:24px;width:290px;padding:24px;border:1px solid #d7deeb;background:#fff;border-radius:18px}h1{font-size:25px;margin:0 0 12px}button,select{font:inherit;padding:9px 14px;border-radius:8px;border:1px solid #ccd5e5;background:#f7f9ff;cursor:pointer;margin:4px}small{display:block;color:#64748b;margin-top:14px}.seat{position:fixed;right:8%;bottom:27%;width:38%;height:16px;background:#b4c4df;border-radius:7px}#status{font-size:13px;margin:14px 0;white-space:pre-wrap}</style><div class="panel"><h1>鲸汐 · 动作预览</h1><p>动作库支持分类、搜索和逐项播放。右键角色也可打开。</p><select id="mode"><option value="new">动作库</option><option value="old">原有动作</option></select><div><button id="library">打开动作库</button><button data-action="stand">站立待机</button><button data-action="walk">走路</button><button data-action="wave">挥手</button><button data-action="sit">坐在窗沿</button><button data-action="q-sitting-talking-loop">坐着聊天</button><button data-action="q-idle-talking-loop">站着聊天</button><button data-action="dance">舞蹈</button></div><p><a href="../releases/0.5.7/dsh-plugin-whale-mate-0.5.7.zip">下载 0.5.7 本地试用 ZIP</a></p><div id="status">正在加载角色和动作……</div><small>可播放 33 项：新增 10 段完整动作，含坐姿、聊天和舞蹈。复查：130 项需 Unity 求值，84 项缺少主体轨迹；动作库中已更正原因。坐姿和舞蹈已使用新动作。</small></div><div class="seat"></div><script type="module">
-import {createPet} from '../public/pet.js';
-const seat=document.querySelector('.seat');
-window.pet=await createPet({modelUrl:'../public/deepseek-reset.vrm',size:530,persist:false,findHome:()=>seat,storageKey:'motion-preview'});
-pet.nextIdle=1e9;const library=pet.motions;
-function status(){document.querySelector('#status').textContent=pet.motionStatus.error||`${pet.motions?'动作库':'原有'} · ${pet.state().loc}\n已加载 ${pet.motionStatus.clips.length} 项\n当前：${pet.motions?.get(pet.gesture?.name)?.label ?? pet.gesture?.name ?? '自然待机'}`}
-document.querySelector('#library').onclick=()=>pet.openMotionMenu(370,60);
-document.querySelector('#mode').onchange=e=>{pet.motions=e.target.value==='new'?library:null;pet.gesture=null;document.querySelectorAll('[data-action^="q-"]').forEach(b=>b.disabled=e.target.value==='old');status()};
-document.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>{pet.nextIdle=1e9;let a=b.dataset.action;if(a==='q-idle-talking-loop'||a==='dance'){pet.perch=null;pet.anchor={x:innerWidth*.69,y:innerHeight-24};pet.setLoc('stand',true)}if(a==='stand'){pet.perch=null;pet.anchor={x:innerWidth*.69,y:innerHeight-24};pet.setLoc('stand',true)}else if(a==='sit'){pet.recall()}else if(a==='walk'){pet.perch=null;pet.anchor={x:innerWidth*.72,y:innerHeight-24};pet.setLoc('stand',true);pet.walkTo(innerWidth*.45)}else pet.action(a);status()});
-setInterval(status, 500);window.__loaded=true;document.querySelector('[data-action="stand"]').click();status();
-</script></html>
+<!doctype html>
+<html lang="zh-CN">
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>
+    鲸汐 · 动作预览</title
+  ><style>
+    body {
+      margin: 0;
+      background: #eef2fa;
+      color: #263653;
+      font: 15px/1.6 system-ui;
+      overflow: hidden;
+    }
+    .panel {
+      position: fixed;
+      left: 28px;
+      top: 24px;
+      width: 290px;
+      padding: 24px;
+      border: 1px solid #d7deeb;
+      background: #fff;
+      border-radius: 18px;
+    }
+    h1 {
+      font-size: 25px;
+      margin: 0 0 12px;
+    }
+    button,
+    select {
+      font: inherit;
+      padding: 9px 14px;
+      border-radius: 8px;
+      border: 1px solid #ccd5e5;
+      background: #f7f9ff;
+      cursor: pointer;
+      margin: 4px;
+    }
+    small {
+      display: block;
+      color: #64748b;
+      margin-top: 14px;
+    }
+    .seat {
+      position: fixed;
+      right: 8%;
+      bottom: 27%;
+      width: 38%;
+      height: 16px;
+      background: #b4c4df;
+      border-radius: 7px;
+    }
+    #status {
+      font-size: 13px;
+      margin: 14px 0;
+      white-space: pre-wrap;
+    }
+  </style>
+  <div class="panel">
+    <h1>鲸汐 · 动作预览</h1>
+    <p>动作库支持分类、搜索和逐项播放。右键角色也可打开。</p>
+    <select id="mode">
+      <option value="new">动作库</option>
+      <option value="old">原有动作</option>
+    </select>
+    <div>
+      <button id="library">打开动作库</button><button data-action="stand">站立待机</button
+      ><button data-action="walk">走路</button><button data-action="wave">挥手</button
+      ><button data-action="sit">坐在窗沿</button><button data-action="q-sitting-talking-loop">坐着聊天</button
+      ><button data-action="q-idle-talking-loop">站着聊天</button><button data-action="dance">舞蹈</button>
+    </div>
+    <p><a href="../releases/0.5.7/dsh-plugin-whale-mate-0.5.7.zip">下载 0.5.7 本地试用 ZIP</a></p>
+    <div id="status">正在加载角色和动作……</div>
+    <small
+      >可播放 33 项：新增 10 段完整动作，含坐姿、聊天和舞蹈。复查：130 项需 Unity 求值，84
+      项缺少主体轨迹；动作库中已更正原因。坐姿和舞蹈已使用新动作。</small
+    >
+  </div>
+  <div class="seat"></div>
+  <script type="module">
+    import { createPet } from '../public/pet.js'
+    const seat = document.querySelector('.seat')
+    window.pet = await createPet({
+      modelUrl: '../public/deepseek-reset.vrm',
+      size: 530,
+      persist: false,
+      findHome: () => seat,
+      storageKey: 'motion-preview'
+    })
+    pet.nextIdle = 1e9
+    const library = pet.motions
+    function status() {
+      document.querySelector('#status').textContent =
+        pet.motionStatus.error ||
+        `${pet.motions ? '动作库' : '原有'} · ${pet.state().loc}\n已加载 ${pet.motionStatus.clips.length} 项\n当前：${pet.motions?.get(pet.gesture?.name)?.label ?? pet.gesture?.name ?? '自然待机'}`
+    }
+    document.querySelector('#library').onclick = () => pet.openMotionMenu(370, 60)
+    document.querySelector('#mode').onchange = (e) => {
+      pet.motions = e.target.value === 'new' ? library : null
+      pet.gesture = null
+      document.querySelectorAll('[data-action^="q-"]').forEach((b) => (b.disabled = e.target.value === 'old'))
+      status()
+    }
+    document.querySelectorAll('[data-action]').forEach(
+      (b) =>
+        (b.onclick = () => {
+          pet.nextIdle = 1e9
+          let a = b.dataset.action
+          if (a === 'q-idle-talking-loop' || a === 'dance') {
+            pet.perch = null
+            pet.anchor = { x: innerWidth * 0.69, y: innerHeight - 24 }
+            pet.setLoc('stand', true)
+          }
+          if (a === 'stand') {
+            pet.perch = null
+            pet.anchor = { x: innerWidth * 0.69, y: innerHeight - 24 }
+            pet.setLoc('stand', true)
+          } else if (a === 'sit') {
+            pet.recall()
+          } else if (a === 'walk') {
+            pet.perch = null
+            pet.anchor = { x: innerWidth * 0.72, y: innerHeight - 24 }
+            pet.setLoc('stand', true)
+            pet.walkTo(innerWidth * 0.45)
+          } else pet.action(a)
+          status()
+        })
+    )
+    setInterval(status, 500)
+    window.__loaded = true
+    document.querySelector('[data-action="stand"]').click()
+    status()
+  </script>
+</html>

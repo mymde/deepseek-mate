@@ -4,9 +4,26 @@ import * as THREE from 'three'
 import { VRMSpringBoneJoint, VRMHumanBoneName } from '@pixiv/three-vrm'
 
 export const BONES = [
-  'hips', 'spine', 'chest', 'upperChest', 'neck', 'head',
-  'leftShoulder', 'rightShoulder', 'leftUpperArm', 'rightUpperArm', 'leftLowerArm', 'rightLowerArm', 'leftHand', 'rightHand',
-  'leftUpperLeg', 'rightUpperLeg', 'leftLowerLeg', 'rightLowerLeg', 'leftFoot', 'rightFoot',
+  'hips',
+  'spine',
+  'chest',
+  'upperChest',
+  'neck',
+  'head',
+  'leftShoulder',
+  'rightShoulder',
+  'leftUpperArm',
+  'rightUpperArm',
+  'leftLowerArm',
+  'rightLowerArm',
+  'leftHand',
+  'rightHand',
+  'leftUpperLeg',
+  'rightUpperLeg',
+  'leftLowerLeg',
+  'rightLowerLeg',
+  'leftFoot',
+  'rightFoot'
 ]
 
 const _e = new THREE.Euler()
@@ -21,7 +38,7 @@ export class Rig {
       const node = vrm.humanoid.getNormalizedBoneNode(name)
       if (node) this.nodes[name] = node
     }
-    this.acc = Object.fromEntries(Object.keys(this.nodes).map(n => [n, new THREE.Quaternion()]))
+    this.acc = Object.fromEntries(Object.keys(this.nodes).map((n) => [n, new THREE.Quaternion()]))
     this.root = { y: 0, rotX: 0, rotY: 0, rotZ: 0 }
     this.reset()
   }
@@ -97,7 +114,7 @@ export function addSprings(vrm) {
     { test: /^OceanHair/i, settings: { stiffness: 0.9, dragForce: 0.3, gravityPower: 0.3, hitRadius: 0.03 } },
     { test: /Skirt/i, settings: { stiffness: 1.6, dragForce: 0.45, gravityPower: 0.2, hitRadius: 0.04 } },
     { test: /^WhaleTail/i, settings: { stiffness: 1.4, dragForce: 0.4, gravityPower: 0.1, hitRadius: 0.03 } },
-    { test: /Fin|Ear/i, settings: { stiffness: 2.5, dragForce: 0.5, gravityPower: 0.05, hitRadius: 0.01 } },
+    { test: /Fin|Ear/i, settings: { stiffness: 2.5, dragForce: 0.5, gravityPower: 0.05, hitRadius: 0.01 } }
   ]
   let added = 0
   vrm.scene.traverse((bone) => {
@@ -110,10 +127,15 @@ export function addSprings(vrm) {
     while (current) {
       const child = current.children.find((c) => preset.test.test(c.name) || /_end$/.test(c.name))
       if (!child || taken.has(current)) break
-      const joint = new VRMSpringBoneJoint(current, child, {
-        ...preset.settings,
-        gravityDir: new THREE.Vector3(0, -1, 0),
-      }, colliders)
+      const joint = new VRMSpringBoneJoint(
+        current,
+        child,
+        {
+          ...preset.settings,
+          gravityDir: new THREE.Vector3(0, -1, 0)
+        },
+        colliders
+      )
       manager.addJoint(joint)
       taken.add(current)
       added++

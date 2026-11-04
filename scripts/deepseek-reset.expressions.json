@@ -1,61 +1,61 @@
 {
- "blink": {
-  "EA_blink": 1
- },
- "blinkLeft": {
-  "EA_blink_L": 1
- },
- "blinkRight": {
-  "EA_blink_R": 1
- },
- "happy": {
-  "QC_smile": 1,
-  "OD_smile": 1,
-  "EA_brow_happy": 1
- },
- "angry": {
-  "EA_angry_eye": 1,
-  "EA_brow_angry": 1,
-  "OD_corner_down": 0.6
- },
- "sad": {
-  "EA_sad_eye": 1,
-  "EA_brow_sad": 1,
-  "OD_corner_down": 0.5
- },
- "relaxed": {
-  "EA_relaxed_eye": 1,
-  "EA_brow_relaxed": 1,
-  "OD_smile": 0.4
- },
- "surprised": {
-  "EA_surprised_eye": 1,
-  "EA_brow_surprised": 1,
-  "OD_oh": 0.6
- },
- "aa": {
-  "OD_aa": 1
- },
- "ih": {
-  "OD_ih": 1
- },
- "ou": {
-  "OD_ou": 1
- },
- "ee": {
-  "OD_ee": 1
- },
- "oh": {
-  "OD_oh": 1
- },
- "jito": {
-  "AP_jito": 1
- },
- "wink": {
-  "QC_wink_l": 1
- },
- "tehe": {
-  "OD_tongue_tehe": 1,
-  "QC_wink_r": 1
- }
+  "blink": {
+    "EA_blink": 1
+  },
+  "blinkLeft": {
+    "EA_blink_L": 1
+  },
+  "blinkRight": {
+    "EA_blink_R": 1
+  },
+  "happy": {
+    "QC_smile": 1,
+    "OD_smile": 1,
+    "EA_brow_happy": 1
+  },
+  "angry": {
+    "EA_angry_eye": 1,
+    "EA_brow_angry": 1,
+    "OD_corner_down": 0.6
+  },
+  "sad": {
+    "EA_sad_eye": 1,
+    "EA_brow_sad": 1,
+    "OD_corner_down": 0.5
+  },
+  "relaxed": {
+    "EA_relaxed_eye": 1,
+    "EA_brow_relaxed": 1,
+    "OD_smile": 0.4
+  },
+  "surprised": {
+    "EA_surprised_eye": 1,
+    "EA_brow_surprised": 1,
+    "OD_oh": 0.6
+  },
+  "aa": {
+    "OD_aa": 1
+  },
+  "ih": {
+    "OD_ih": 1
+  },
+  "ou": {
+    "OD_ou": 1
+  },
+  "ee": {
+    "OD_ee": 1
+  },
+  "oh": {
+    "OD_oh": 1
+  },
+  "jito": {
+    "AP_jito": 1
+  },
+  "wink": {
+    "QC_wink_l": 1
+  },
+  "tehe": {
+    "OD_tongue_tehe": 1,
+    "QC_wink_r": 1
+  }
 }

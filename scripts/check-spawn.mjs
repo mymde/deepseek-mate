@@ -13,16 +13,41 @@ const root = mkdtempSync(join(tmpdir(), 'whale-spawn-'))
 const overlay = new DesktopOverlay({ config: { electron }, root, modelPath: resolveModel().path })
 const pending = new Map()
 let id = 0
-overlay.onDebug = m => { pending.get(m.id)?.(m); pending.delete(m.id) }
-const debug = (op, code) => new Promise((resolve, reject) => {
-  const key = ++id
-  const timer = setTimeout(() => { pending.delete(key); reject(new Error('debug timeout')) }, 10000)
-  pending.set(key, m => { clearTimeout(timer); m.error ? reject(new Error(m.error)) : resolve(m) })
-  overlay.send({ type: 'debug', op, code, id: key })
-})
-const delay = ms => new Promise(r => setTimeout(r, ms))
-const until = async fn => { for (let i = 0; i < 150; i++) { if (await fn()) return; await delay(100) } throw new Error('timeout waiting for overlay') }
-const geometry = { screenX: 200, screenY: 300, outerWidth: 1000, outerHeight: 550, innerWidth: 1000, innerHeight: 550, dpr: 1, hidden: false }
+overlay.onDebug = (m) => {
+  pending.get(m.id)?.(m)
+  pending.delete(m.id)
+}
+const debug = (op, code) =>
+  new Promise((resolve, reject) => {
+    const key = ++id
+    const timer = setTimeout(() => {
+      pending.delete(key)
+      reject(new Error('debug timeout'))
+    }, 10000)
+    pending.set(key, (m) => {
+      clearTimeout(timer)
+      m.error ? reject(new Error(m.error)) : resolve(m)
+    })
+    overlay.send({ type: 'debug', op, code, id: key })
+  })
+const delay = (ms) => new Promise((r) => setTimeout(r, ms))
+const until = async (fn) => {
+  for (let i = 0; i < 150; i++) {
+    if (await fn()) return
+    await delay(100)
+  }
+  throw new Error('timeout waiting for overlay')
+}
+const geometry = {
+  screenX: 200,
+  screenY: 300,
+  outerWidth: 1000,
+  outerHeight: 550,
+  innerWidth: 1000,
+  innerHeight: 550,
+  dpr: 1,
+  hidden: false
+}
 try {
   await overlay.start({ size: 220 })
   await until(() => overlay.ready || overlay.lastExit)
@@ -35,9 +60,9 @@ try {
   await until(async () => (await debug('eval', '__whaleMate.state().perch')).value === 'harness-window')
   console.log('PASS first geometry seats the character on the host window')
   assert.equal((await debug('eval', '__whaleMate.motions.get("sit").source.path')).value, 'Sitting_Idle_Loop')
-  overlay.send({type:'cmd',method:'action',args:['q-sitting-talking-loop']})
-  await until(async()=> (await debug('eval','__whaleMate.gesture?.name')).value === 'q-sitting-talking-loop')
-  assert.equal((await debug('eval','__whaleMate.state().perch')).value,'harness-window')
+  overlay.send({ type: 'cmd', method: 'action', args: ['q-sitting-talking-loop'] })
+  await until(async () => (await debug('eval', '__whaleMate.gesture?.name')).value === 'q-sitting-talking-loop')
+  assert.equal((await debug('eval', '__whaleMate.state().perch')).value, 'harness-window')
   console.log('PASS desktop commands play the new seated clip while retaining the host seat')
   overlay.send({ type: 'geometry', geometry: { ...geometry, hidden: true } })
   await until(async () => !(await debug('info')).visible)
@@ -48,4 +73,8 @@ try {
   overlay.stop()
   assert.equal(overlay.running, false)
   console.log('PASS stop disposes the overlay child')
-} finally { overlay.stop(); await delay(1800); rmSync(root, { recursive: true, force: true }) }
+} finally {
+  overlay.stop()
+  await delay(1800)
+  rmSync(root, { recursive: true, force: true })
+}

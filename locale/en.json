@@ -1,1 +1,6 @@
-{ "meta": { "title": "Whale Mate", "description": "A 3D desktop pet living in the Harness UI: sits on the composer, speaks DeepSeek's replies, can be dragged, patted and danced." } }
+{
+  "meta": {
+    "title": "Whale Mate",
+    "description": "A 3D desktop pet living in the Harness UI: sits on the composer, speaks DeepSeek's replies, can be dragged, patted and danced."
+  }
+}

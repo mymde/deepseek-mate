@@ -29,8 +29,8 @@ export function elbow(side, flex) {
 const ARM_DOWN_L = armAim('left', [0.28, -0.95, 0.12], 0.2)
 const ARM_DOWN_R = armAim('right', [-0.28, -0.95, 0.12], -0.2)
 
-export function standPose(t, ctx) {
-  const breath = Math.sin(t * (Math.PI * 2) / 4.2)
+export function standPose(t, _ctx) {
+  const breath = Math.sin((t * (Math.PI * 2)) / 4.2)
   const shift = wobble(t * 0.35, 1)
   const arms = 0.04 * wobble(t * 0.6, 3)
   return {
@@ -52,9 +52,9 @@ export function standPose(t, ctx) {
       leftUpperLeg: [0, 0, -0.03 * shift],
       rightUpperLeg: [0, 0, -0.03 * shift],
       leftLowerLeg: [0.04 + 0.04 * Math.max(0, shift), 0, 0],
-      rightLowerLeg: [0.04 + 0.04 * Math.max(0, -shift), 0, 0],
+      rightLowerLeg: [0.04 + 0.04 * Math.max(0, -shift), 0, 0]
     },
-    root: { y: -0.004 * (1 - breath) },
+    root: { y: -0.004 * (1 - breath) }
   }
 }
 
@@ -73,12 +73,12 @@ export function sitLegs(t, legs = SIT_LEGS, swing = 1) {
     leftLowerLeg: [legs.knee + sway, 0, 0],
     rightLowerLeg: [legs.knee + sway, 0, 0],
     leftFoot: [legs.foot, -legs.toesIn, 0],
-    rightFoot: [legs.foot, legs.toesIn, 0],
+    rightFoot: [legs.foot, legs.toesIn, 0]
   }
 }
 
 export function sitPose(t, ctx) {
-  const breath = Math.sin(t * (Math.PI * 2) / 4.6)
+  const breath = Math.sin((t * (Math.PI * 2)) / 4.6)
   const swing = ctx.legSwing ?? 1
   const l = Math.sin(t * 2.1) * 0.22 * swing
   const r = Math.sin(t * 2.1 + 2.2) * 0.22 * swing
@@ -105,9 +105,9 @@ export function sitPose(t, ctx) {
       leftLowerLeg: [1.25 + l, 0, 0],
       rightLowerLeg: [1.25 + r, 0, 0],
       leftFoot: [-0.15 + l * 0.4, 0, 0],
-      rightFoot: [-0.15 + r * 0.4, 0, 0],
+      rightFoot: [-0.15 + r * 0.4, 0, 0]
     },
-    root: {},
+    root: {}
   }
 }
 
@@ -131,9 +131,9 @@ export function walkPose(t, ctx) {
       leftLowerLeg: [0.15 + 0.6 * Math.max(0, s), 0, 0],
       rightLowerLeg: [0.15 + 0.6 * Math.max(0, -s), 0, 0],
       leftFoot: [-0.15 * s, 0, 0],
-      rightFoot: [0.15 * s, 0, 0],
+      rightFoot: [0.15 * s, 0, 0]
     },
-    root: { y: 0.025 * bob - 0.012 },
+    root: { y: 0.025 * bob - 0.012 }
   }
 }
 
@@ -157,13 +157,13 @@ export function danglePose(t, ctx) {
       leftLowerLeg: [0.55 - kick, 0, 0],
       rightLowerLeg: [0.35 + kick, 0, 0],
       leftFoot: [0.3, 0, 0],
-      rightFoot: [0.3, 0, 0],
+      rightFoot: [0.3, 0, 0]
     },
-    root: { rotZ: -0.5 * vx, rotX: 0.25 * vy },
+    root: { rotZ: -0.5 * vx, rotX: 0.25 * vy }
   }
 }
 
-export function fallPose(t, ctx) {
+export function fallPose(t, _ctx) {
   const f = Math.sin(t * 12) * 0.25
   return {
     bones: {
@@ -176,9 +176,9 @@ export function fallPose(t, ctx) {
       leftUpperLeg: [-0.5, 0, 0.1],
       rightUpperLeg: [-0.2, 0, -0.1],
       leftLowerLeg: [0.8, 0, 0],
-      rightLowerLeg: [0.5, 0, 0],
+      rightLowerLeg: [0.5, 0, 0]
     },
-    root: {},
+    root: {}
   }
 }
 
@@ -199,9 +199,9 @@ export function landPose(t, ctx) {
       leftLowerLeg: [1.3 * k, 0, 0],
       rightLowerLeg: [1.3 * k, 0, 0],
       leftFoot: [-0.5 * k, 0, 0],
-      rightFoot: [-0.5 * k, 0, 0],
+      rightFoot: [-0.5 * k, 0, 0]
     },
-    root: { y: -0.16 * k },
+    root: { y: -0.16 * k }
   }
 }
 
@@ -217,19 +217,21 @@ export const GESTURES = {
       bones: {
         rightUpperArm: armAim('right', [-0.55, 0.78, 0.2], -0.4),
         rightLowerArm: [0, 0.3 + 0.25 * Math.sin(g * 9), -1.1],
-        rightHand: [0, 0, 0.25 * Math.sin(g * 9)],
+        rightHand: [0, 0, 0.25 * Math.sin(g * 9)]
       },
-      add: { head: [0, 0, -0.08], chest: [0, 0, -0.04] },
-    }),
+      add: { head: [0, 0, -0.08], chest: [0, 0, -0.04] }
+    })
   },
   nod: {
     duration: 1.1,
-    fn: (g) => ({ add: { head: [0.22 * Math.max(0, Math.sin(g * 11)), 0, 0], neck: [0.08 * Math.max(0, Math.sin(g * 11)), 0, 0] } }),
+    fn: (g) => ({
+      add: { head: [0.22 * Math.max(0, Math.sin(g * 11)), 0, 0], neck: [0.08 * Math.max(0, Math.sin(g * 11)), 0, 0] }
+    })
   },
   shake: {
     duration: 1.3,
     face: { sad: 0.25 },
-    fn: (g) => ({ add: { head: [0, 0.3 * Math.sin(g * 13), 0], neck: [0, 0.1 * Math.sin(g * 13), 0] } }),
+    fn: (g) => ({ add: { head: [0, 0.3 * Math.sin(g * 13), 0], neck: [0, 0.1 * Math.sin(g * 13), 0] } })
   },
   think: {
     duration: 1e9,
@@ -241,11 +243,11 @@ export const GESTURES = {
         rightLowerArm: elbow('right', 2.15),
         rightHand: [0.3, 0, 0.2],
         leftUpperArm: armAim('left', [0.2, -0.75, 0.62], 0.7),
-        leftLowerArm: elbow('left', 1.55),
+        leftLowerArm: elbow('left', 1.55)
       },
       add: { head: [-0.12, 0.12 + 0.05 * Math.sin(g * 0.8), 0.12], chest: [0.02, 0.05, 0] },
-      look: { x: -0.35, y: 0.55 },
-    }),
+      look: { x: -0.35, y: 0.55 }
+    })
   },
   pat: {
     duration: 2.4,
@@ -255,15 +257,15 @@ export const GESTURES = {
         leftUpperArm: armAim('left', [0.2, -0.7, 0.68], 0.9),
         rightUpperArm: armAim('right', [-0.2, -0.7, 0.68], -0.9),
         leftLowerArm: elbow('left', 1.1),
-        rightLowerArm: elbow('right', 1.1),
+        rightLowerArm: elbow('right', 1.1)
       },
-      add: { head: [0.12, 0, 0.16 + 0.05 * Math.sin(g * 5)], chest: [0.04, 0, 0.04 * Math.sin(g * 2.5)] },
-    }),
+      add: { head: [0.12, 0, 0.16 + 0.05 * Math.sin(g * 5)], chest: [0.04, 0, 0.04 * Math.sin(g * 2.5)] }
+    })
   },
   poke: {
     duration: 1.6,
     face: { Surprised: 0.9 },
-    fn: (g) => ({ add: { spine: [-0.14 * Math.exp(-g * 3), 0, 0], head: [-0.1 * Math.exp(-g * 3), 0, 0] } }),
+    fn: (g) => ({ add: { spine: [-0.14 * Math.exp(-g * 3), 0, 0], head: [-0.1 * Math.exp(-g * 3), 0, 0] } })
   },
   cheer: {
     duration: 2.2,
@@ -273,23 +275,23 @@ export const GESTURES = {
         leftUpperArm: armAim('left', [0.45, 0.88, 0.1]),
         rightUpperArm: armAim('right', [-0.45, 0.88, 0.1]),
         leftLowerArm: elbow('left', 0.3),
-        rightLowerArm: elbow('right', 0.3),
+        rightLowerArm: elbow('right', 0.3)
       },
-      root: { y: 0.06 * Math.max(0, Math.sin(g * 7)) },
-    }),
+      root: { y: 0.06 * Math.max(0, Math.sin(g * 7)) }
+    })
   },
   bow: {
     duration: 2,
     face: { happy: 0.5 },
-    fn: (g) => ({
+    fn: () => ({
       bones: {
         leftUpperArm: armAim('left', [0.12, -0.9, 0.42], 0.6),
         rightUpperArm: armAim('right', [-0.12, -0.9, 0.42], -0.6),
         leftLowerArm: elbow('left', 0.6),
-        rightLowerArm: elbow('right', 0.6),
+        rightLowerArm: elbow('right', 0.6)
       },
-      add: { spine: [0.28, 0, 0], chest: [0.15, 0, 0], head: [0.1, 0, 0] },
-    }),
+      add: { spine: [0.28, 0, 0], chest: [0.15, 0, 0], head: [0.1, 0, 0] }
+    })
   },
   stretch: {
     duration: 3.2,
@@ -299,10 +301,10 @@ export const GESTURES = {
         leftUpperArm: armAim('left', [0.15, 0.98, -0.1]),
         rightUpperArm: armAim('right', [-0.15, 0.98, -0.1]),
         leftLowerArm: elbow('left', 0.15),
-        rightLowerArm: elbow('right', 0.15),
+        rightLowerArm: elbow('right', 0.15)
       },
-      add: { spine: [-0.12, 0, 0.05 * Math.sin(g * 1.5)], head: [-0.2, 0, 0] },
-    }),
+      add: { spine: [-0.12, 0, 0.05 * Math.sin(g * 1.5)], head: [-0.2, 0, 0] }
+    })
   },
   shy: {
     duration: 2.5,
@@ -312,10 +314,10 @@ export const GESTURES = {
         leftUpperArm: armAim('left', [0.1, -0.8, 0.6], 0.8),
         rightUpperArm: armAim('right', [-0.1, -0.8, 0.6], -0.8),
         leftLowerArm: elbow('left', 1.3),
-        rightLowerArm: elbow('right', 1.3),
+        rightLowerArm: elbow('right', 1.3)
       },
-      add: { head: [0.18, -0.15, -0.1], spine: [0.05, 0, 0.04 * Math.sin(g * 3)] },
-    }),
+      add: { head: [0.18, -0.15, -0.1], spine: [0.05, 0, 0.04 * Math.sin(g * 3)] }
+    })
   },
   dance: {
     duration: 7,
@@ -327,12 +329,16 @@ export const GESTURES = {
           leftUpperArm: armAim('left', [0.7, 0.3 + 0.5 * Math.sin(b), 0.3]),
           rightUpperArm: armAim('right', [-0.7, 0.3 - 0.5 * Math.sin(b), 0.3]),
           leftLowerArm: elbow('left', 0.9 + 0.4 * Math.sin(b)),
-          rightLowerArm: elbow('right', 0.9 - 0.4 * Math.sin(b)),
+          rightLowerArm: elbow('right', 0.9 - 0.4 * Math.sin(b))
         },
-        add: { hips: [0, 0.25 * Math.sin(b / 2), 0.08 * Math.sin(b)], head: [0.08 * Math.abs(Math.sin(b)), 0, 0.12 * Math.sin(b / 2)], spine: [0, 0, -0.06 * Math.sin(b)] },
-        root: { y: 0.03 * Math.abs(Math.sin(b)) },
+        add: {
+          hips: [0, 0.25 * Math.sin(b / 2), 0.08 * Math.sin(b)],
+          head: [0.08 * Math.abs(Math.sin(b)), 0, 0.12 * Math.sin(b / 2)],
+          spine: [0, 0, -0.06 * Math.sin(b)]
+        },
+        root: { y: 0.03 * Math.abs(Math.sin(b)) }
       }
-    },
+    }
   },
   talk: {
     duration: 1e9,
@@ -341,14 +347,14 @@ export const GESTURES = {
       add: {
         head: [0.03 * Math.sin(g * 3.1), 0.06 * Math.sin(g * 1.3), 0.03 * Math.sin(g * 1.9)],
         rightUpperArm: [0, 0, 0.12 * Math.max(0, Math.sin(g * 1.1))],
-        rightLowerArm: [0, 0.35 * Math.max(0, Math.sin(g * 1.1)), 0],
-      },
-    }),
+        rightLowerArm: [0, 0.35 * Math.max(0, Math.sin(g * 1.1)), 0]
+      }
+    })
   },
   sleep: {
     duration: 1e9,
     fade: 1.2,
     face: { blink: 1, relaxed: 0.4 },
-    fn: (g) => ({ add: { head: [0.35 + 0.03 * Math.sin(g * 1.3), 0, 0.15], neck: [0.12, 0, 0], spine: [0.08, 0, 0] } }),
-  },
+    fn: (g) => ({ add: { head: [0.35 + 0.03 * Math.sin(g * 1.3), 0, 0.15], neck: [0.12, 0, 0], spine: [0.08, 0, 0] } })
+  }
 }

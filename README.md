@@ -1,144 +1,246 @@
-# 希可儿 · dsh-plugin-whale-mate
+# 希可儿 · deepseek-mate
 
-A 3D desktop-pet plugin for DeepSeek Harness. Install it and she appears in the Harness Web UI. No separate program and no extra configuration are needed.
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-```sh
-dsh plugin --profile web add ./dsh-plugin-whale-mate      # local directory
-dsh plugin --profile web add ./dsh-plugin-whale-mate-0.5.7.tgz
-# or from GitHub (pin a commit): dsh plugin --profile web add github:<owner>/<repo>#<sha>
-```
+**A 3D desktop companion (桌宠) for [DeepSeek Harness](https://github.com/deepseek-ai).** Install the plugin and 希可儿 appears in the Harness Web UI, sitting on the chat input box. She breathes, looks at your cursor, reacts while the agent thinks, mouths the streamed reply, and can move out to your real desktop to sit on the top edge of any window or the taskbar.
 
-Restart `dsh web` and open the page. 希可儿 will sit on the top edge of the chat input box.
+> **Naming.** The project/repository is **deepseek-mate**; the plugin package id is **`dsh-plugin-whale-mate`** (kept unchanged so existing installs, config keys and stored settings keep working). The character is **希可儿** (Xikeer).
 
-**DeepSeek Harness Desktop** (the official app) uses its own `desktop` profile; `--profile web` does not reach it. Either:
+[中文文档](README.zh-CN.md) · [Changelog](CHANGELOG.md) · [Asset licences](ASSET_LICENSES.md) · [Contributing](CONTRIBUTING.md)
 
-- in the app: **插件 → 添加插件**, enter the absolute path of the unpacked plugin directory (or a package name / Git URL); or
-- with the app's own `dsh` command (Application menu → Manage dsh Command…): quit Desktop completely, run `dsh plugin --profile desktop add <path to dsh-plugin-whale-mate-0.5.7.tgz>`, then reopen it.
+![希可儿](public/thumbs/avatar.png)
 
-To upgrade, **remove the old version first** (the plugin manager refuses to install over an installed package), then add the new one and restart Desktop. **Settings → 希可儿桌宠 → 版本 · 诊断信息** shows which version is actually running (page and host).
+---
+
+## Table of contents
+
+- [What she does](#what-she-does)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Using her](#using-her)
+- [Desktop mode](#desktop-mode)
+- [Models](#models)
+- [Configuration](#configuration)
+- [Agent tools](#agent-tools)
+- [How it works](#how-it-works)
+- [Development](#development)
+- [Troubleshooting](#troubleshooting)
+- [Limits](#limits)
+- [License](#license)
+- [Acknowledgements](#acknowledgements)
 
 ## What she does
 
-| Scenario | Behaviour |
-|---|---|
-| Idle | Breathes, blinks, legs swing, eyes and head follow the mouse. Occasionally stretches, wanders, or sits down. After 3 minutes without activity she dozes off. |
-| You send a message | Nods to acknowledge it. |
-| DeepSeek is thinking | Hand on chin, with a "…" bubble. |
-| DeepSeek replies | Mouth moves in sync with the streamed text; the bubble shows the latest part of the reply, then the opening of the reply once it finishes. |
-| Request fails | Sad face, shakes her head, and the bubble explains why (for example, "no API key configured"). |
-| Drag her | She dangles from the grab point and swings with your movement. Release her and she falls, or throw her. She lands on the top edge of whatever card is below, or on the bottom of the window. Surfaces too close to the top of the window (where her head would be cut off) are skipped. |
-| Double-click | Waves and says hello. |
-| Click her head / move the mouse back and forth over her head | Headpat: squints and smiles. |
-| Click her body | Gets startled. |
-| Right-click | Menu: wave, dance, sit/stand, walk, back to input box, sleep, size, **到桌面上去** (desktop mode), hide. |
+| Scenario                                  | Behaviour                                                                                                                                                                                                                                                                         |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Idle                                      | Breathes, blinks, swings her legs, follows the mouse with her eyes and head. Occasionally stretches, walks around, sits on the edge, or plays a small motion. After 3 minutes without activity she dozes off.                                                                     |
+| You send a message                        | Nods to acknowledge it.                                                                                                                                                                                                                                                           |
+| DeepSeek is thinking                      | Hand on chin, with a "…" bubble.                                                                                                                                                                                                                                                  |
+| DeepSeek replies                          | Her mouth moves in sync with the streamed text; the bubble shows the latest part of the reply, then the opening of the reply once it finishes.                                                                                                                                    |
+| A request fails                           | Sad face, shakes her head, and the bubble explains why (for example, "no API key configured").                                                                                                                                                                                    |
+| You drag her                              | She dangles from the grab point and swings as you move. Release her and she falls, or throws her. She lands on the top edge of whatever card is below, or on the bottom of the window. Surfaces too close to the top of the window (where her head would be cut off) are skipped. |
+| Double-click                              | Waves and says hello.                                                                                                                                                                                                                                                             |
+| Click her head / stroke it with the mouse | Headpat: she squints and smiles.                                                                                                                                                                                                                                                  |
+| Click her body                            | She gets startled.                                                                                                                                                                                                                                                                |
+| Right-click                               | A radial wheel: your favourite actions and expressions, the window/desktop switch, and hide.                                                                                                                                                                                      |
+| Settings                                  | **Settings → 希可儿桌宠**: model, mode, size, right-click wheel contents, diagnostics.                                                                                                                                                                                            |
 
-The agent can also control her through three tools:
+The character is fully local: the plugin ships its own Three.js/three-vrm engine and VRM avatar. It does not call any LLM itself — the bubble text comes from the Harness session it is watching.
 
-| Tool | What it does |
-|---|---|
-| `pet_say` | Says a line in the bubble. |
-| `pet_expression` | Sets her expression (`happy` / `angry` / `sad` / `relaxed` / `surprised` …). |
-| `pet_action` | Performs an action (`wave` / `nod` / `dance` / `bow` / `cheer` / `sleep` / `home` …). |
+## Requirements
 
-The sidebar has a "🐋 希可儿" button that shows or hides her (showing her again always puts her back on the input box). **Settings → 希可儿桌宠** has 「叫她回来」 (recall), size, hello, and the desktop-mode switch.
+- **DeepSeek Harness** — the official Desktop app (recommended) or `dsh web`, version `0.2.1` or newer.
+- **OS** — Windows 10/11, macOS, or Linux (X11). Desktop mode has the best window tracking on Windows; see [Desktop mode](#desktop-mode).
+- **Node.js 22+** only if you build from source or run the test suite. Installing the plugin needs no toolchain.
+- No Unity, no Blender, no separate application. Desktop mode downloads its own Electron runtime on first use (or reuses one you already have).
+
+## Installation
+
+### Install sources
+
+The **添加插件 (Add plugin)** dialog accepts three kinds of source:
+
+| Source                | Example                                                                                    | Notes                                                                |
+| --------------------- | ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------- |
+| npm package name      | `dsh-plugin-whale-mate`                                                                    | works once the package is published to the registry the profile uses |
+| GitHub repository URL | `https://github.com/mymde/deepseek-mate.git#v0.6.3` or `github:mymde/deepseek-mate#v0.6.3` | recommended; this repository currently ships this way                |
+| absolute local path   | `/absolute/path/to/deepseek-mate` or a `.tgz`                                              | offline installs and development                                     |
+
+This project is not published on npm yet, so use the GitHub URL (or a local path) in the dialog. Pin the tag (`#v0.6.3`) so that reinstalling is reproducible.
+
+### DeepSeek Harness Web (`dsh web`)
+
+```sh
+# from GitHub, pinned to the release tag
+dsh plugin --profile web add github:mymde/deepseek-mate#v0.6.3
+
+# or a local directory / tarball
+dsh plugin --profile web add /absolute/path/to/deepseek-mate
+dsh plugin --profile web add /absolute/path/to/dsh-plugin-whale-mate-0.6.3.tgz
+```
+
+Restart `dsh web` and open the page. 希可儿 sits on the top edge of the chat input box.
+
+### DeepSeek Harness Desktop (the official app)
+
+The Desktop app uses its own `desktop` profile, so `--profile web` does not reach it. Either:
+
+1. In the app: **插件 (Plugins) → 添加插件 (Add plugin)**, then enter the repository URL:
+   `https://github.com/mymde/deepseek-mate.git#v0.6.3`
+   (a package name or an absolute path to an unpacked plugin folder also works); or
+2. With the app's own `dsh` command (**Application menu → Manage dsh Command…**): quit Desktop completely, run
+   `dsh plugin --profile desktop add github:mymde/deepseek-mate#v0.6.3`, then reopen the app.
+
+### Upgrading and removing
+
+The plugin manager refuses to install over an existing package:
+
+1. Quit Harness completely.
+2. Remove the old plugin entry in **插件**.
+3. Add the new version, then restart.
+
+**Settings → 希可儿桌宠 → 版本 · 诊断信息** shows which version is actually running (page and host), so you can confirm an upgrade took effect.
+
+## Using her
+
+- **Sidebar** — the 🐋 希可儿 button shows or hides her; showing her again always puts her back on the input box.
+- **Right-click** — a radial wheel with the actions/expressions you picked in Settings (up to 6), the **窗口模式 / 桌面模式** switch, and **隐藏**.
+- **Settings → 希可儿桌宠** — model, mode, size (160–640 px), right-click wheel contents, recall button, diagnostics.
+- **Size** is stored per browser (localStorage). Desktop mode uses the same size.
 
 ## Desktop mode
 
-Inside the page she can never leave the Harness window. In desktop mode the plugin opens a transparent, always-on-top, click-through window over the desktop and she moves there:
+Inside the page she can never leave the Harness window. In desktop mode the plugin opens a transparent, always-on-top, click-through window over the desktop, and she moves there:
 
-- on enabling desktop mode she sits on the **top edge of the Harness window** automatically and rides along when you move it; recall also returns her to that edge;
+- enabling desktop mode seats her on the **top edge of the Harness window** automatically, and she rides along when you move it;
 - she can be dragged anywhere on the screen; only her visible pixels take the mouse, everything else clicks through to the apps below;
-- minimising or hiding Harness to the tray hides the overlay; restoring Harness restores her perch. Replies, thinking, errors and `pet_*` tools still reach her.
-- if the window touches the screen top (including maximised windows), the seat moves inward enough to keep her head visible. With enough space above the window she sits on the actual outside edge.
+- minimising or hiding Harness to the tray hides the overlay; restoring Harness restores her perch;
+- if the window touches the screen top (including maximised windows), the seat moves inward enough to keep her head visible;
+- replies, thinking, errors and the `pet_*` tools still reach her on the desktop.
 
-Turn it on from her right-click menu (到桌面上去) or **Settings → 希可儿桌宠 → 桌面模式**; turn it off from her menu on the desktop (回到 Harness 窗口里) or the same settings block. The choice is remembered.
+Turn it on from her right-click wheel (到桌面上去) or **Settings → 希可儿桌宠 → 桌面模式**; turn it off from her desktop menu (回到 Harness 窗口里) or the same settings block. The choice is remembered.
 
-The window is an Electron window. Runtime, in order of preference:
+### Runtime resolution
 
-1. `electron` in the plugin config (or `DSH_WHALE_MATE_ELECTRON`): path to an Electron executable you already have;
+The overlay is an Electron window. The runtime is resolved in this order:
+
+1. `electron` in the plugin config (or `DSH_WHALE_MATE_ELECTRON`) — path to an Electron executable you already have;
 2. the Harness host itself, when it runs in an Electron main process;
-3. otherwise a one-time download of Electron 44.10.2 for your OS (≈150 MB on Windows) from the npmmirror mirror (GitHub as fallback), verified against the release's `SHASUMS256.txt`, unpacked into `~/.dsh-whale-mate/runtime/` (`DSH_WHALE_MATE_HOME` moves it). Nothing is downloaded until you switch desktop mode on.
+3. otherwise a one-time download of **Electron 44.10.2** for your OS (≈150 MB on Windows) from the npmmirror mirror (GitHub as fallback), verified against the release's `SHASUMS256.txt`, unpacked into `~/.dsh-whale-mate/runtime/` (`DSH_WHALE_MATE_HOME` moves it). Nothing is downloaded until you switch desktop mode on.
 
-Desktop mode only works on the machine that runs Harness (the control routes accept loopback requests only and sit behind Harness's login fence); remote or display-less hosts show the reason in the settings block. `desktop: false` in the plugin config removes it entirely. On Linux the overlay runs Chromium without its sandbox (an unpacked runtime cannot have a setuid helper); it only loads the plugin's own files from a token-protected loopback URL.
+Desktop mode only works on the machine that runs Harness: the control routes accept loopback requests only and sit behind Harness's login fence. Remote or display-less hosts show the reason in the settings block. `desktop: false` in the plugin config removes desktop mode entirely. On Linux the overlay runs Chromium without its sandbox (an unpacked runtime cannot have a setuid helper); it only loads the plugin's own files from a token-protected loopback URL.
+
+### Configuration
 
 ```yaml
 - id: whale-mate
   config:
-    desktop: true          # false: no desktop mode
-    electron: C:/tools/electron/electron.exe   # optional: use this runtime, skip the download
+    desktop: true # false: no desktop mode
+    electron: C:/tools/electron/electron.exe # optional: use this runtime, skip the download
 ```
 
 ## Models
 
-| id | Model | Notes |
-|---|---|---|
-| `deepseek-reset` (default) | DeepSeek Reset | **If you use this model, credit bilibili @hihihihi202** (https://space.bilibili.com/3546568969947566). The original author allows modification; commercial use is forbidden. |
-| `whale-maid` | 希可儿 maid | Built on VRoid's CC0 template. |
+### Bundled model
 
-**Settings → 希可儿桌宠** shows the current model's author and credit notice (read from the VRM metadata).
+| id                         | Model          | Notes                                                                                                                                                                            |
+| -------------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `deepseek-reset` (default) | DeepSeek Reset | **If you use this model, credit bilibili @hihihihi202** (https://space.bilibili.com/3546568969947566). The original author allows modification; **commercial use is forbidden**. |
 
-### Switching to a built-in model, or using your own VRM
+**Settings → 希可儿桌宠** shows the current model's author and credit notice, read from the VRM metadata.
 
-Set `model` to a built-in id, or to an absolute path to a `.vrm` file on the Harness host. Put this in your profile's `cordis.patch.yml`:
+The earlier VRoid-template character (`whale-maid.vrm`, 18.7 MB) is **not** shipped since 0.6.2 — the package is 9.1 MB instead of 21.6 MB. Its CC0 base is documented in [`ASSET_LICENSES.md`](ASSET_LICENSES.md); you can still use any VRM you own through the `model` setting.
+
+### Using your own VRM
+
+Set `model` to an absolute path to a `.vrm` file on the Harness host (VRM 0.x and 1.0 are supported):
 
 ```yaml
 - id: whale-mate
   config:
-    model: whale-maid                  # or /path/to/your-avatar.vrm (VRM 0.x / 1.0)
-    modelName: My Character            # display name on the settings page (optional)
+    model: /path/to/your-avatar.vrm
+    modelName: My Character # display name on the settings page (optional)
 ```
 
-You can also use the environment variable `DSH_WHALE_MATE_MODEL=/path/to/x.vrm`. Restart `dsh web` for the change to take effect. **Settings → 希可儿桌宠** shows the model currently loaded. Model files are only served to logged-in users of this machine's Harness; they are not uploaded anywhere.
+Or use the environment variable `DSH_WHALE_MATE_MODEL=/path/to/x.vrm`. Restart `dsh web` for the change to take effect. Model files are only served to logged-in users of this machine's Harness; they are not uploaded anywhere.
 
-### Repairing exported models: `scripts/repair-vrm.py`
+### Repairing exported models
 
-Models exported from Blender often have these problems. The script fixes them and writes a new file; the original is never modified.
+Models exported from Blender often have problems. `scripts/repair-vrm.py` fixes them and writes a new file; the original is never modified.
 
-| Option | Fixes |
-|---|---|
-| `--rest-from-bind` | The skeleton's rest pose doesn't match the mesh (for example, the arms point forward and back). Rebuilds the rest pose from the skin's inverse bind matrices. |
-| `--face +x` | The character faces the wrong way. Rotates the mesh and skeleton so the character faces +Z, as VRM 1.0 requires. |
-| `--unlit-emission` | The colour lives entirely in emission (black base colour) and appears washed out in three.js. Converts these materials to unlit, with colours tone-mapped through AgX so they look the same as in Blender. |
-| `--expressions map.json` | Morph targets aren't bound to VRM expressions (no blinking, expressions or lip sync). Binds them by name. |
-| `--patch-materials` / `--add-image` | Puts back textures the export lost (face, hair, irises). |
-| `--nudge` / `--thicken` | Fixes z-fighting between coplanar layers (iris vs. eye white), and hairline mouth contours too thin to see at pet size. |
-| Always on | Drops constant vertex-colour sets, drops morph normals on unlit meshes, and stores morph targets as sparse accessors. This usually shrinks the file several times over. |
+| Option                              | Fixes                                                                                                                                                                |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--rest-from-bind`                  | The skeleton's rest pose doesn't match the mesh. Rebuilds the rest pose from the skin's inverse bind matrices.                                                       |
+| `--face +x`                         | The character faces the wrong way. Rotates the mesh and skeleton so the character faces +Z, as VRM 1.0 requires.                                                     |
+| `--unlit-emission`                  | The colour lives entirely in emission (black base colour) and looks washed out in three.js. Converts these materials to unlit, with colours tone-mapped through AgX. |
+| `--expressions map.json`            | Morph targets aren't bound to VRM expressions (no blinking, expressions or lip sync). Binds them by name.                                                            |
+| `--patch-materials` / `--add-image` | Puts back textures the export lost (face, hair, irises).                                                                                                             |
+| `--nudge` / `--thicken`             | Fixes z-fighting between coplanar layers (iris vs. eye white), and hairline mouth contours too thin to see at pet size.                                              |
+| Always on                           | Drops constant vertex-colour sets, drops morph normals on unlit meshes, stores morph targets as sparse accessors. Usually shrinks the file several times over.       |
 
-### Rebuilding the default model from the `.blend`
+### Rebuilding the default model
 
-`scripts/build-deepseek-reset.sh DeepSeek_Reset_4K_Lite.blend` (needs Blender 5.2 + VRM Add-on 4.10) runs these steps:
-- Turns the character to face the camera.
-- Bakes the HoYoverse/Genshin toon materials into textures and converts them to MToon.
-- Binds 13 standard expressions plus `jito` / `wink` / `tehe`.
-- Writes the credit metadata.
-- Slims the file with `repair-vrm.py` (sparse morph targets, JPEG textures).
+`scripts/build-deepseek-reset.sh DeepSeek_Reset_4K_Lite.blend` (Blender 5.2 + VRM Add-on 4.10) turns the character to face the camera, bakes the HoYoverse/Genshin toon materials into textures and converts them to MToon, binds 13 standard expressions plus `jito` / `wink` / `tehe`, writes the credit metadata, and slims the file with `repair-vrm.py`. The result is about 13 MB. `scripts/tune-mtoon.py` adjusts MToon outlines and shading without rebuilding.
 
-The result is about 13 MB. `scripts/tune-mtoon.py` adjusts MToon outlines and shading without rebuilding. `scripts/repair-deepseek-reset.sh` repairs the earlier exported `.vrm` directly; the result is not as good as rebuilding from the `.blend`.
+## Configuration
+
+Plugin config lives in the profile's `cordis.patch.yml`:
+
+```yaml
+- id: whale-mate
+  config:
+    desktop: true
+    electron: null
+    model: null
+    modelName: null
+    tools: true
+```
+
+| Key         | Type    | Default | Meaning                                                         |
+| ----------- | ------- | ------- | --------------------------------------------------------------- |
+| `desktop`   | boolean | `true`  | `false` disables desktop mode and its routes entirely.          |
+| `electron`  | string  | —       | Absolute path to an Electron executable; skips the download.    |
+| `model`     | string  | —       | Built-in id (`deepseek-reset`) or an absolute path to a `.vrm`. |
+| `modelName` | string  | —       | Display name for the custom model in Settings.                  |
+| `tools`     | boolean | `true`  | `false` does not register the `pet_*` agent tools.              |
+
+Environment variables:
+
+| Variable                  | Effect                                                |
+| ------------------------- | ----------------------------------------------------- |
+| `DSH_WHALE_MATE_MODEL`    | Same as `model`, used when the config value is empty. |
+| `DSH_WHALE_MATE_ELECTRON` | Same as `electron`.                                   |
+| `DSH_WHALE_MATE_HOME`     | Where the downloaded desktop runtime is unpacked.     |
+
+## Agent tools
+
+The agent can control her through three tools (registered only when `tools` is not `false`):
+
+| Tool             | What it does                                                                                                                                                                                        |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pet_say`        | Says a line in the bubble (`text`, optional `expression`). Keep it under 60 characters.                                                                                                             |
+| `pet_expression` | Sets her expression for `seconds` (1–30, default 4): `neutral`, `happy`, `angry`, `sad`, `relaxed`, `surprised`, `blink`.                                                                           |
+| `pet_action`     | Performs an action: `wave`, `nod`, `shake`, `cheer`, `bow`, `stretch`, `shy`, `dance`, `jump`, `sit`, `stand`, `walk`, `sleep`, `wake`, `home`, plus every motion bundled in `public/motions.json`. |
+
+The tools only acknowledge the call; the browser overlay watches the session stream and performs the action, so there is no extra host↔browser channel.
 
 ## How it works
 
 - **Host side (`lib/index.js`)**
-  - Serves the `public/` engine and model under `/whale-mate/`.
-  - Uses Harness's own login fence, so unauthenticated requests get a 401.
-  - Registers the three `pet_*` tools. The tools only acknowledge the call.
+  - serves the `public/` engine and model under `/whale-mate/` behind Harness's own login fence (unauthenticated requests get a 401);
+  - registers the three `pet_*` tools (they only acknowledge);
+  - mounts the desktop-mode routes and forwards validated commands to the overlay.
 - **Desktop overlay (`lib/desktop.js`, `desktop/`)**
-  - `lib/desktop.js`: finds or downloads the runtime, starts `desktop/app.cjs` with a Node IPC channel (or the overlay in-process), relays page → overlay messages through `POST /whale-mate/desktop/send` after validating them.
-  - `desktop/main.cjs`: one transparent window over the work area of the display Harness is on; serves `overlay.html`, `pet.js` and the model from a random loopback port; toggles click-through from the pet's per-pixel hit test (Windows/macOS) or sets an input shape around her (Linux); polls the OS cursor so she keeps looking at it.
-  - **Official Windows Desktop:** `desktop/harness-window.cjs` uses Koffi to read only the window of the shell PID that launched the official Host. It reads DWM visible-frame bounds, converts physical pixels to Electron DIP, and polls at 50 ms independently of the page. Minimise, tray hiding and restoration are native window states. No other application is a perch.
-  - **Web / non-Windows fallback:** the page reports `window.screenX/Y`, size and visibility every 200 ms. This fallback does not have the native tracking guarantees.
-  - `desktop/seat.cjs` resolves available screen space; `overlay.html` seats on the window by default and preserves the perch while hidden.
-- **Browser side (`client/client.js`)**
-  - A hand-written dsh client module; it needs no build at install time.
-  - Loads `public/pet.js`.
-  - Follows the session in the main view through the `sessions` service. Live text, running state and `tool/call` events drive the pet directly, so no extra host↔browser channel is needed.
+  - `lib/desktop.js` finds or downloads the runtime, starts `desktop/app.cjs` with a Node IPC channel (or runs the overlay in-process), and relays page → overlay messages through `POST /whale-mate/desktop/send` after validating them;
+  - `desktop/main.cjs` opens one transparent window over the work area of the display Harness is on, serves `overlay.html`, `pet.js` and the model from a random loopback port, toggles click-through from the pet's per-pixel hit test (Windows/macOS) or sets an input shape around her (Linux), and polls the OS cursor;
+  - on the official Windows Desktop, `desktop/harness-window.cjs` uses Koffi to read only the window of the shell PID that launched the official Host (DWM visible-frame bounds, physical pixels converted to Electron DIP, polled at 50 ms). No other application is a perch;
+  - on Web / non-Windows the page reports `window.screenX/Y`, size and visibility every 200 ms; this fallback has no native tracking guarantees.
+- **Browser side (`client/client.js`)** — a hand-written DSH client module (no build step at install time). It loads `public/pet.js` and follows the session in the main view through the `sessions` service; live text, running state and `tool/call` events drive the pet directly.
 - **Engine (`src/pet/`, bundled to `public/pet.js` with three.js and three-vrm)**
-
-  | Part | Role |
-  |---|---|
-  | Overlay | A transparent `position:fixed` layer. A per-pixel hit test means only her visible pixels take the mouse; her legs below the seat edge are always click-through. |
-  | Pose system | Locomotion states, gesture layers, look-at and root motion are blended, then smoothed onto every bone. |
-  | Physics | 70 spring bones are added at runtime for the hair, skirt and tail. Her position on the page maps to world coordinates, so dragging and falling make the hair and tail sway naturally. |
-  | Face | Emotion blending, random blinking (with occasional double blinks), and lip sync driven by the text. |
+  - overlay: a transparent `position:fixed` layer with a per-pixel hit test;
+  - pose system: locomotion, gesture layers, look-at and root motion blended and smoothed onto every bone;
+  - physics: 70 spring bones added at runtime for hair, skirt and tail;
+  - face: emotion blending, random blinking, and lip sync driven by the text.
 
 ## Development
 
@@ -146,237 +248,101 @@ The result is about 13 MB. `scripts/tune-mtoon.py` adjusts MToon outlines and sh
 npm install
 npm run build        # src/pet -> public/pet.js (also copies the model if missing)
 npm test             # host routes, native tracking, seat geometry, FFI (Linux needs a C compiler)
-node scripts/check-pet.mjs          # screenshots on a simulated page (test/harness.html)
-node scripts/pose-gallery.mjs       # front/side screenshots of each pose
-node scripts/mock-llm.mjs 18790     # OpenAI-compatible mock model for end-to-end testing
+
+npm run lint         # ESLint (flat config)
+npm run format        # Prettier
+npm run format:check  # verify formatting without writing
+
+node scripts/check-pet.mjs           # screenshots on a simulated page (test/harness.html)
+node scripts/pose-gallery.mjs        # front/side screenshots of each pose
+node scripts/mock-llm.mjs 18790      # OpenAI-compatible mock model for end-to-end testing
 node scripts/check-dsh.mjs '<dsh url with ?token=>'   # end-to-end test in a real Harness
-node scripts/check-clip.mjs         # regression: no perch where her head would be cut off
-# desktop mode (Linux + Xvfb; WHALE_MATE_ELECTRON_FLAGS="--use-gl=angle --use-angle=swiftshader" for software GL)
-xvfb-run -s "-screen 0 1600x900x24" node scripts/check-desktop.mjs <electron> [outDir]
-DISPLAY=:77 node scripts/check-dsh-desktop.mjs '<dsh url with ?token=>' [outDir]   # Harness started with DISPLAY=:77
+node scripts/check-clip.mjs          # regression: no perch where her head would be cut off
 ```
 
-Verified with DeepSeek Harness 0.2.1-rc.5 (Linux, headless Chrome + SwiftShader).
+Desktop-mode checks (Linux + Xvfb; `WHALE_MATE_ELECTRON_FLAGS="--use-gl=angle --use-angle=swiftshader"` for software GL):
+
+```sh
+xvfb-run -s "-screen 0 1600x900x24" node scripts/check-desktop.mjs <electron> [outDir]
+DISPLAY=:77 node scripts/check-dsh-desktop.mjs '<dsh url with ?token=>' [outDir]
+```
+
+The screenshot and end-to-end scripts load `playwright-core` and a Chrome/Chromium binary. Install them separately (`npm i -D playwright-core`) or point `PLAYWRIGHT_CORE` at an installed module and `CHROME_PATH` at your browser; nothing is downloaded automatically.
+
+Developed against DeepSeek Harness `0.2.1-rc.5` (Linux, headless Chrome + SwiftShader). Windows Win32 tracking still benefits from real-machine acceptance runs.
+
+### Project layout
+
+```
+client/            DSH client module (browser half, no build step)
+desktop/           Electron overlay: main process, preload, seat geometry, Win32 window reader, vendored koffi
+lib/               Host half: routes, model resolution, agent tools, desktop runtime manager/downloader
+locale/            en / zh UI strings
+public/            runtime assets: pet.js bundle, VRM model, motions.json, thumbnails, notices
+scripts/           build, screenshots, end-to-end checks, VRM repair/rebuild helpers
+src/pet/           pet engine source (Three.js + three-vrm), bundled into public/pet.js
+test/              node:test suites and HTML fixtures
+```
+
+## Troubleshooting
+
+| Symptom                                                         | What to check                                                                                                                                               |
+| --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| She never appears                                               | Is the plugin enabled in **插件**? Is she hidden (sidebar 🐋 / Settings recall)? Check **版本 · 诊断信息** for the page and host version.                   |
+| The settings page is empty                                      | The host side failed to load; look at the Harness log for `whale-mate:` messages.                                                                           |
+| Desktop mode says the runtime could not be downloaded           | Set `electron` (or `DSH_WHALE_MATE_ELECTRON`) to an Electron executable, or install the offline Windows runtime included in the release bundle, then retry. |
+| Desktop window exits immediately (`Cannot find module 'koffi'`) | Fixed in 0.5.10 by vendoring `desktop/vendor/koffi/`; make sure the installed package contains it (the npm/GitHub package does).                            |
+| Window tracking unavailable                                     | Windows native tracking needs the official Desktop Host; other launchers fall back to page coordinates.                                                     |
+| Model looks wrong / has black spikes                            | Use a repaired VRM (`scripts/repair-vrm.py`) and check it is VRM 0.x/1.0 with MToon materials.                                                              |
 
 ## Limits
 
-- The built-in character is the earlier VRoid-template version (`whale-maid.vrm`, 18.7 MB). The face and hairstyle are not yet a 1:1 match with the original art. Other models can be used through the `model` setting.
 - Spring-bone physics is only added for models with separate hair/skirt/tail bone chains (VRoid style). A model whose hair is a single mesh skinned to the head (like DeepSeek Reset) has no hair sway.
 - The long skirt has no cloth simulation. Sitting relies on the "seated" morph and spring bones, so there is a little clipping under extreme poses.
 - She only follows live events of the session in the main view; tool calls in background sessions don't reach her.
 - One pet per browser tab. Settings (size, show/hide, seat position) are stored in that browser's localStorage.
-- 0.5.2 has unit tests plus a real Electron overlay/window integration fixture on Linux (Xvfb + Openbox + software GL). The fixture substitutes the OS bounds reader on Linux; it is **not** a complete boot of the official app. Windows Win32 calls, mixed-DPI physical monitors and focus/click-through still require a Windows acceptance run.
-- Native tracking is scoped to the official Windows Desktop Host entry (`@deepseek-ai/dsh-desktop-host/lib/index.js`) and its parent shell process. Other launchers use the page fallback. No modifications to the official app are needed. Koffi 3.1.0 ships prebuilt Windows x64/ia32 binaries; Windows ARM64 is not validated.
+- Windows Win32 calls, mixed-DPI physical monitors and focus/click-through still benefit from a real-machine acceptance run.
+- Native tracking is scoped to the official Windows Desktop Host entry and its parent shell process. Koffi 3.1.0 ships prebuilt Windows x64/ia32 binaries; Windows ARM64 is not validated.
 
 ## License
 
-- Code: MIT.
-- Model: `deepseek-reset.vrm` is by bilibili @hihihihi202, free to modify and redistribute with credit, **no commercial use**. See `ASSET_LICENSES.md`.
-- Third-party motion/expression data: the clips converted from GI-Engine / Mate-Engine (AGIA, Clean Curve Studio; Shiny) are **not** MIT and are not licensed for redistribution by this project. They remain under their original terms; the copyright stays with the original authors. Quaternius clips are CC0. See `public/animation-notices/` and `ASSET_LICENSES.md`.
-- three.js and three-vrm: MIT. Their license text is kept at the end of the bundle.
-- Electron (desktop mode only): MIT; not bundled, downloaded on demand from the official release (or a mirror of it) with checksum verification.
+- **Code**: MIT — see [`LICENSE`](LICENSE).
+- **`deepseek-reset.vrm`**: by bilibili [@hihihihi202](https://space.bilibili.com/3546568969947566). Free to modify and redistribute with credit; **no commercial use**. See [`ASSET_LICENSES.md`](ASSET_LICENSES.md).
+- **Third-party motion/expression data**: clips converted from GI-Engine / Mate-Engine (AGIA by Clean Curve Studio; Shiny) are **not** MIT and are not licensed for redistribution by this project. They remain under their original terms; copyright stays with the original authors. Quaternius clips are CC0. See [`public/animation-notices/`](public/animation-notices/) and [`ASSET_LICENSES.md`](ASSET_LICENSES.md).
+- **Dependencies**: three.js and three-vrm are MIT; Electron and koffi are MIT.
 
-## 0.5.2 Windows desktop fix / 验收
+## Acknowledgements
 
-对照官方源码提交 `8bd073392eef6f54e921a093b95076248eb08cbb`（desktop `0.2.2-alpha.3`）的 `apps/desktop/src/host-process.ts`、`node-environment.ts`、`main.ts` 和 `preload-app.ts` 实现。插件在 Host 子进程运行，官方 preload 没有提供主窗口位置接口，因此通过 Host 的父进程 PID 限定原生窗口读取，保留独立透明叠加层。
+This project stands on a lot of other people's work. Thank you.
 
-1. 完全退出官方桌面版，移除旧版插件，安装 `dsh-plugin-whale-mate-0.5.7.tgz` 到 **desktop** profile，再启动应用。
-2. 设置 → 希可儿桌宠 → 开启桌面模式。确认前后端均为 0.5.2，显示「已连接官方 Windows 桌面窗口」，诊断 `tracking.source` 为 `official-desktop-win32`。若显示页面跟随，不能当作原生适配成功。
-3. 把 Harness 窗口顶部留出约 220 像素：开启即坐上沿，角色上半身应显示在窗口外。移动、缩放窗口，她应跟随；最小化及关闭到托盘时隐藏；恢复后回到同一座位。
-4. 最大化窗口：使用靠内座位以保留头部空间；恢复普通窗口后回到真实上沿。尝试跨 100% / 150% 缩放显示器、改变页面缩放、点击角色旁边的桌面，检查跟随与鼠标穿透。
+### Projects and libraries
 
-可复现的回归命令：
+| Project                                                                                          | Author / source                                 | Used for                                                       |
+| ------------------------------------------------------------------------------------------------ | ----------------------------------------------- | -------------------------------------------------------------- |
+| **DeepSeek Harness (DSH)**                                                                       | DeepSeek                                        | Host platform, plugin APIs, web server, session events         |
+| **Cordis**                                                                                       | DeepSeek / cordis                               | Plugin and loader runtime                                      |
+| [three.js](https://threejs.org/)                                                                 | mrdoob and contributors (MIT)                   | 3D rendering                                                   |
+| [@pixiv/three-vrm](https://github.com/pixiv/three-vrm)                                           | pixiv Inc. (MIT)                                | VRM loading, MToon, expressions, spring bones                  |
+| [Electron](https://www.electronjs.org/)                                                          | OpenJS Foundation (MIT)                         | Desktop overlay window (downloaded, not bundled)               |
+| [koffi](https://koffi.dev/)                                                                      | Niels Martignène (MIT)                          | Native Win32 window queries on Windows                         |
+| [esbuild](https://esbuild.github.io/)                                                            | Evan Wallace (MIT)                              | Bundling `src/pet` into `public/pet.js`                        |
+| [GI-Engine](https://github.com/Nekoluna-dot/GI-Engine)                                           | Nekoluna-dot; AGIA assets by Clean Curve Studio | AGIA FBX idle / walk / wave motions (converted locally)        |
+| [Mate-Engine](https://github.com/Shiny-Engine)                                                   | Shiny                                           | Additional motion and expression sources                       |
+| [Quaternius Universal Animation Library](https://quaternius.itch.io/universal-animation-library) | Quaternius (CC0)                                | 10 full-skeleton locomotion / idle clips                       |
+| [VRoid Studio](https://vroid.com/)                                                               | pixiv Inc.                                      | CC0 `AvatarSample_4` base for the earlier whale-maid character |
+| [Blender](https://www.blender.org/) + [VRM Add-on](https://vrm-addon-for-blender.info/)          | Blender Foundation / SATO Yusuke                | Model export and material conversion pipeline                  |
 
-```sh
-npm test
-npm run build
-# Linux: needs xvfb, openbox, xcompmgr and an Electron binary
-xvfb-run -a -s '-screen 0 1600x1000x24' sh scripts/check-harness-window-linux.sh /path/to/electron
-# Independent child process / inherited RunAsNode regression
-xvfb-run -a -s '-screen 0 1600x900x24' node scripts/check-spawn.mjs /path/to/electron
-# Windows: same real-window fixture, this time calling the actual Win32 reader
-C:/path/to/electron.exe scripts/check-harness-window.cjs
-```
+### Models and artwork
 
-完整官方桌面版在真实 Windows 上的验收尚未在本 Linux 服务器执行。
+- **DeepSeek Reset** (`public/deepseek-reset.vrm`) — original character by **bilibili @hihihihi202**. Re-exported from `DeepSeek_Reset_4K_Lite.blend` with orientation fixes, MToon baking, expression binding and metadata. The author allows modification and redistribution with credit; commercial use is forbidden.
+- **希可儿 (whale-maid)** — built on VRoid Studio's CC0 `AvatarSample_4` (Victoria Rubin) with a new maid outfit, long hair, fin ears and tail; the character design follows reference art supplied for this project. Not shipped in 0.6.x.
+- **Motion and expression data** — AGIA (Clean Curve Studio), GI-Engine, Mate-Engine and Quaternius; see the licence section above and [`ASSET_LICENSES.md`](ASSET_LICENSES.md).
 
-本轮验证：15 项单元测试、11 项 Electron 窗口状态检查、5 项独立进程启动/隐藏/恢复/关闭检查通过。窗口状态夹具和透明画布检查不能替代 Windows 桌面合成、鼠标穿透的实机验证。
+### Thanks
 
-## 0.5.3 启动诊断修正
+- To the DeepSeek Harness team for the plugin system and the `pet_*` tool pattern this project builds on.
+- To everyone who filed issues, tested desktop mode and contributed translations.
 
-针对「右键到桌面上去后菜单关闭，角色仍在页面内」：确认 0.5.2 的右键入口没有当前界面的下载/启动/错误提示。浏览器回归复现：start 请求已发送、运行时在下载、角色仍在页面、当前界面提示数量为零。
+---
 
-0.5.3 增加当前界面的进度/错误提示、15 秒控制请求超时、无效响应检查，保留最近启动请求的 HTTP 状态及错误；诊断增加 Host PID/父 PID/原生目标 PID/叠加层 PID。配置 Electron 路径不存在时明确报错，避免静默返回。
-
-16 项单元测试和 3 项真实菜单点击回归通过。该版本修正静默失败并补充诊断，**尚未确定用户 Windows 上的实际启动失败原因**；需要现场 download、lastExit、running/ready、tracking 状态，不能据此宣称 Windows 坐窗已修好。
-
-## 0.5.4 下载恢复与 Windows 离线安装
-
-用户的后续诊断确认失败发生在独立 Electron 运行时下载阶段，叠加层尚未启动。旧下载器中断即删除已下载数据，且仅显示 `fetch failed`，无法区分具体网络原因。
-
-- 每个来源最多尝试三次，连接或数据连续等待超过 30 秒即重试；npmmirror 失败后尝试 GitHub。
-- 保留 `.part` 文件及其对应 SHA-256，支持跨重试、跨来源和重启后的 HTTP Range 续传。来源不支持 Range 时安全重新下载；错误范围不拼接；完整校验失败不安装。
-- 显示下载来源、尝试次数、校验/解压阶段及底层网络错误码；修复取消后立即重试的旧任务覆盖状态问题。
-- 这些改动不改变 Windows 代理设置，也不关闭 TLS 校验。网络无法访问两个来源时，请使用离线包。
-
-Windows x64 离线包 `whale-mate-runtime-44.10.2-win32-x64-offline.zip` 包含官方 Electron 原始压缩包、官方校验清单和安装脚本。与 **0.5.3 / 0.5.4** 均兼容，无需先升级插件即可绕过下载失败：
-
-1. 完全退出 Harness，包括系统托盘中的程序。
-2. 解压整个离线包到普通文件夹，双击 `install-runtime.cmd`，无需管理员权限。
-3. 脚本核对内置 SHA-256 后解压到 `%USERPROFILE%\.dsh-whale-mate\runtime\electron-v44.10.2-win32-x64`（如配置了 `DSH_WHALE_MATE_HOME` 则使用该目录），写入完成标记。
-4. 重新打开 Harness，点击“到桌面上去”。运行时应直接被识别，无需再次下载。
-
-安装脚本不联网、不修改官方 Harness 安装目录；中途失败不会写入最终完成标记，已有不完整目录会被保留为备份。运行时解压约 370 MiB，安装前请至少预留 1 GB 空间。
-
-验证：28 项单元测试通过，涵盖断流续传、忽略/错误 Range、超时、取消、文件写入失败、镜像切换和 SHA-256 拒绝。5 项真实浏览器菜单检查通过，涵盖重试进度和异步下载错误提示。Windows 原始归档与官方 SHA-256 相符且 ZIP 完整性检查通过。Windows 安装脚本和真实桌面坐窗效果仍需目标机器验证。
-
-## 0.5.5 本地动作适配试用
-
-现有动作主要来自程序生成的欧拉角摆动。此版为本次个人本地试用接入 GI-Engine 的三段真实 FBX 动画：自然待机（6.8 秒）、行走循环（约 1.067 秒）、挥手循环（0.6 秒，交互时播放 2.4 秒）。它们不是 `.vmd` 文件。
-
-- 根据源 `.meta` 中的参考骨架与人形映射转换，51 个骨骼含手指；四元数插值、循环首尾混合及动作切换平滑。
-- 行走和站立按角色体型对齐脚底；坐着挥手仅覆盖上半身，保留座位与腿部姿态。
-- 页面内和独立 Electron 桌面窗口加载同一个 `public/motions.json`；缺失或无效时保留程序动作并报告错误，角色不会消失。
-- localhost 对比预览：`node scripts/serve.mjs 8795` 后访问 `http://localhost:8795/test/motions.html`。预览是浏览器中的动作演示，不是 Windows 原生窗口感知验证。
-
-素材来自本地 GI-Engine checkout `7544dab99f1d1509a2e61ed995b13f4ae4f4145e` 中的 AGIA 资源。**动画不属于本插件的 MIT 代码许可；转换后的数据未取得公开再分发的书面授权，本仓库不为其授予任何许可，版权归原作者所有，权利人提出要求时会移除相应片段。** 来源、原作者及限制见 `ASSET_LICENSES.md` 与 `public/animation-notices/GI-Engine-LICENSE.md`。未复制两个引擎的实现代码。
-
-没有将 Mate-Engine 的 Unity Humanoid `.anim` muscle 数值粗略映射为骨骼角度；该路径需要 Unity 正确评估后导出。原坐姿与舞蹈仍保留；本版不宣称支持任意 VMD 的 IK、表情或物理。行走 FBX 的附加动画层尚未重建。
-
-验证：34 项单元测试、5 项真实 VRM 浏览器动作检查、6 项 Linux 独立 Electron 进程检查通过。检查覆盖脚底对齐、腿部实际变化、坐姿挥手的下半身保护、动作包加载失败回退与桌面进程资源服务。尚未在用户 Windows 实机验证。
-
-
-## 0.5.6 动作库扩展
-
-不需要安装 Unity 即可使用本版已经转换的 23 项：14 个 GI-Engine FBX 骨骼动作、9 个 Mate-Engine / GI-Engine 表情片段。右键希可儿 →「动作库…」可按分类搜索并播放；「停止当前动作」返回当前站姿或坐姿。Harness 页面和独立桌面窗口均可使用，`pet_action` 也包含全部已转换动作的名称。
-
-- 新增握拳、挠头、抚胸、摊手、叉腰、比耶、伸手、背手、摆身、张望、点头。
-- 表情片段按原始 Unity 标量曲线的 Hermite 切线采样，映射到 VRM 的情绪、眨眼和五个口型；播放结束后复位。角色未提供的表情通道会被忽略。
-- 坐着或走着播放骨骼动作时保护腿部；上身片段仅驱动对应脊柱或头颈，表情片段不覆盖身体。
-- 动作包内有完整去重目录和源文件 SHA-256。两个动画目录共 484 个文件、250 项不同内容，23 项可播；经后续逐通道复查，130 项需 Unity Humanoid 求值，84 项缺少主体动画数据，13 项为模型、道具或特效源资源。待转换项禁用播放并说明原因，**并未完成全部动作接入**。
-- 这些仓库中的资源是 FBX 和 Unity `.anim`；本次动画目录未发现原始 VMD / VRMA。不能将 muscle 数值直接当作关节角度。没有 Unity 时，130 项的忠实转换仍受阻；本版未尝试用外观相似的程序动作冒充源动作。
-- 部分 FBX 含多个动画层；Three.js 仅读取首层，因此不保证与 Unity 中的合成结果完全一致。原坐姿和原舞蹈保留。
-
-本地预览：`node scripts/serve.mjs 8795`，打开 `http://localhost:8795/test/motions.html`。本版 ZIP/TGZ 位于 `releases/0.5.6/`。离线 Electron 运行时仍可使用 `releases/0.5.4/` 的 Windows x64 包；本次没有更换运行时。
-
-复现转换（开发工作区，需要已安装的 Three.js 和 Python PyYAML）：
-
-```sh
-node scripts/import-gi-motions.mjs /path/to/GI-Engine public/motions.json
-python3 scripts/catalog-motions.py /path/to/Mate-Engine /path/to/GI-Engine public/motions.json
-npm run build
-```
-
-验证：36 项单元测试、8 项真实 VRM 浏览器检查（逐项播放全部 23 项、搜索菜单、待转换禁用、口型复位、坐姿保护、缺包回退），以及 6 项 Linux 独立 Electron 检查通过。另已目视检查主要新增姿态。没有 Windows 实机验证条件。
-
-
-## 原骨架动画复查与重定向实验
-
-先前将非空 `m_RotationCurves` 判为“可用的原骨架动作”，没有核对旋转轨迹的实际目标节点，导致 88 项被错误归为仅需重定向。现已修正。
-
-- 84 项：只有头发、衣袖等附属骨骼旋转，以及 MotionT/MotionQ 通道，没有主体骨骼旋转或肌肉通道。安装 Unity 本身不能补回这些文件缺失的数据。
-- 2 项：含 Humanoid 肌肉曲线的混合动画，需要完整求值，不能只取附属旋转。
-- 2 项：相机/材质特效，不是人物动作。
-
-思考、挥手、鼓掌三个样本已实际转换并在 VRM 中试播；46 个目标骨骼在片段内的最大角度变化仅为约 0.000003°（浮点误差），不能计为成功。失败产物未加入插件动作包。现有 23 项可播放动作/表情保留。
-
-细节与复现方法见 `test/experiments/README.md`；逐文件证据见 `test/local-motions/generic-audit.json`。源检查器新增 5 项测试，避免把附属骨骼路径中的父节点误当作直接动画目标。已有 0.5.6 压缩包未覆盖；本次是工作区实验与目录纠错，没有新增可播放动作的发行包。
-
-
-## 0.5.7 无需 Unity 的替代动作
-
-新增 10 段 Quaternius 完整骨骼动画，当前共 33 项可播放动作/表情。没有新增 npm 依赖，也不要求安装 Unity、Blender 或其他软件。
-
-新增：轻松待机、站着聊天、律动舞蹈、伸手互动、伸手取物、坐姿待机、坐着聊天、蹲姿待机、端庄行走、自然行走。右键希可儿 → 动作库，可按坐姿、交流、舞蹈、行走等分类选取。循环片段手动选择后至少播放 3 秒。
-
-- 坐到窗沿时自动使用新坐姿；选取坐姿片段时，如果当前在屏幕底部，会先回到可用窗沿，避免双脚被屏幕边缘裁切。
-- 回复时根据站姿或坐姿使用相应聊天动作；「跳个舞」使用新舞蹈。缺失动作包时仍回退到程序动作。
-- 坐姿高度由窗口座位控制，避免叠加源动作的下沉位移。坐着挥手等动作继续保护腿部。
-- 作者提供的 `A_TPose` 作为参考，不使用动画首帧猜参考姿态。骨骼有真实旋转变化；新数据包含 52 个骨骼和手指。
-- 两个原仓库的 250 项源目录保留，另列 10 段 Quaternius 动画片段。原仓库 130 项待 Humanoid 求值、84 项缺少主体数据的状态没有变更；不是“原仓库所有动作已恢复”。
-
-仅使用现有 Node.js / Three.js 工具转换：
-
-```sh
-node scripts/import-quaternius-motions.mjs /path/to/glTF/AnimationLibrary_Godot_Standard.gltf test/local-motions/quaternius.json --install
-npm run build
-```
-
-本地预览 `http://localhost:8795/test/motions.html`；下载目录 `releases/0.5.7/`。旧包保持不变，已有 Electron 运行时可以继续使用。验证包含 37 项单元测试、5 项源文件分类测试、9 项浏览器检查（逐项播放 33 项、真实舞蹈变化、座位高度、表情复位及缺包回退）和 7 项 Linux Electron 检查。尚未验证 Windows 实机。
-
-## 0.5.8 坐在任意窗口上 · 新动作与表情面板 · 默认更大
-
-**坐在其他程序的窗口上（Windows 桌面模式）**
-
-- 桌面层每 120 ms 读一次系统窗口列表（Win32 `EnumWindows`，按前后层级），把普通程序窗口的顶边当作座位。把她拖到任意窗口顶边松手，或右键 →「跳到别的窗口上」即可。
-- 她坐着的那个窗口每 33 ms 单独刷新位置：拖动窗口时她跟着走。窗口被最小化或关闭时她会掉下去，落到下面的窗口或任务栏上。另一个窗口盖住她的座位约 1 秒后，她也会跳下来。弹出菜单和提示框不算遮挡。
-- 跳过的窗口：任务栏、桌面、工具窗口、无标题窗口、太小的窗口，以及贴着屏幕顶端、头顶没空间的窗口（如最大化窗口）。Harness 自己的窗口仍是单独的「坐到 Harness 窗口上」。
-- 有其他窗口可坐时，Harness 最小化后她会留在桌面上；不再跟着 Harness 一起隐藏。
-- 只读取窗口矩形、进程号、类名和样式位，不读取标题文字或窗口内容，也不向外发送任何数据。开销：可见顶层窗口通常有几十个，每次刷新是几百次系统调用，CPU 占用远低于 1%。
-- macOS 和 Linux 暂不支持坐到其他程序窗口上，设置页会注明；在这两个平台上，她和以前一样只能坐在 Harness 窗口和屏幕底部。
-
-**动作与表情面板**（右键 →「动作与表情…」，或设置页按钮）
-
-- 面板打开在她旁边，不挡住她；分类标签页带数量；按钮改为两列卡片，标出循环/单次、是否坐姿。
-- 点击后面板保持打开，可以连续试；正在播放的卡片会高亮，底部显示当前动作，并有「停止」按钮。
-- 「表情」页把 6 个基础表情（笑脸、放松、惊讶、难过、生气、闭眼）和 9 段表情片段放在一起；另补上欢呼、鞠躬、摇头、伸懒腰、害羞等内置动作。
-- 227 个暂时不能播放的源文件收进底部折叠区，不再作为灰色按钮混在列表里。
-
-**默认更大**：默认尺寸从 220 px 改为 300 px；尺寸档位改为 小 240 / 中 300 / 大 380 / 特大 460。之前自动保存的 220 会升级一次，自己选过的尺寸不变。
-
-验证：
-
-- 单元测试 44/44，包括真实 Koffi 调用 C ABI 夹具，覆盖新增的 `GetWindowLongPtrW`、`GetWindowTextLengthW`、`IsWindow`。
-- `scripts/check-any-window.cjs` 15/15：Linux + Xvfb + openbox，真实 Electron 叠加层和 3 个真实窗口，只替换了系统窗口列表这一层。覆盖：落到其他窗口、随窗口移动、Harness 最小化后留在桌面、被遮挡后跳下、跳到别的窗口、窗口最小化后掉落、回到 Harness，以及面板的位置、播放、高亮和表情。
-- `check-harness-window` 11/11、`check-spawn` 7/7，并在真实 Harness Web 页面中检查了面板。
-- **Windows 实机尚未验证**，真实 Win32 窗口列表需要在 Windows 上确认。
-
-## 0.6.3 待机：只去掉自己跳上窗口
-
-- 0.6.2 把待机时的走动、起身、坐下也一起去掉了，这一版恢复：待机时她会走走、在窗口上沿坐下或站起来、晃晃腿、伸懒腰，并随机做小动作、换表情。
-- 唯一去掉的是「自己跳上输入框或窗口」。`scripts/check-idle.mjs` 模拟 10 分钟待机，确认没有任何跳跃，同时仍会走动、做动作、换表情。
-
-## 0.6.2 转盘半透明 · 设置里动作 / 表情分开 · 待机不乱跳 · 头像图标 · 只保留一个形象
-
-- **转盘**：扇区半透明，带轻微背景模糊，文字加了浅色描边，压在任何背景上都看得清。
-- **设置 → 右键转盘**：「动作」和「表情」上下分成两组，各有标题，不再用切换标签。列表只保留能原地做的：去掉了行走、坐下、蹲下这类会让她移动位置的动作，去掉了「说话口型」等技术性表情，同名的只留一个。
-- **待机**：不再自己跳上输入框或窗口，并加入随机的轻柔小动作和表情（0.6.3 起走动、起身、坐下照常保留）。常用的动作和表情用转盘手动触发。
-- **图标**：侧边栏和设置页头部改用希可儿的圆形头像（`public/thumbs/avatar.png`，由 `scripts/render-thumbs.mjs` 从模型渲染）。
-- **形象**：只保留 DeepSeek Reset，去掉设置里的形象选择和鲸鱼女仆模型（安装包从 21.6 MB 降到 9.1 MB）。模型署名放在设置页底部。插件配置里的自定义 `.vrm` 仍然可用，配置了时设置里才会出现形象选择。
-
-## 0.6.1 设置页重做 · 右键转盘 · 端庄坐姿 · 切换模式由她说话提示
-
-- **设置 → 希可儿mate**：卡片式，去掉图标表情和大段说明。从上到下是「形象」（模型缩略图，点一下就换，下面一行注明模型作者）、「模式」（窗口 / 桌面，二选一）、「大小」（拖动条）、「右键转盘」（转盘预览 + 动作 / 表情两栏，点选放进转盘，最多 6 个），诊断信息折叠在最下面。
-- **右键转盘**：右键她，在光标处弹出圆形转盘：选好的动作和表情，加上「桌面模式 / 窗口模式」和「隐藏」。悬停时中间显示完整名称，点中间关闭。
-- **换模型**：内置 DeepSeek Reset 和鲸鱼女仆两个形象，在设置里直接选，页面里立即换；桌面模式下会用新形象重新打开桌面窗口。选择记在浏览器里（`dsh-whale-mate.model`）。插件配置的自定义 `.vrm` 也会作为一个选项出现。
-- **坐姿**：不管用哪段坐姿动画，坐下时双膝和双脚都并拢，小腿略向后收、脚尖微微绷直，只有很轻的同步摆动，不再分开双腿晃脚。裙子坐下时盖腿的形状按这个腿型生成。
-- **黑色细刺**：模型里有几处顶点带着零碎的远端骨骼权重（手臂网格里有几根缝在裙子上的线带绑在胯骨上、飘带带着大腿权重）。加载时会清理这些零碎权重，所有绑在胯骨上的衣物都按顶点跟随裙子一起盖到腿上，坐下时裙边不再有黑刺。
-- **切换模式不弹窗**：开启或关闭桌面模式时不再弹提示框，由她在气泡里说，例如「好呀，我去桌面上等你～」「正在准备桌面…50%」「我到桌面上啦！」「去不了桌面……（原因）」「我回来啦～」。详细错误在设置的「模式」卡片和诊断信息里。
-- **图标**：侧边栏恢复蓝色鲸鱼 🐋，设置里的名称是「希可儿mate」。
-
-## 0.6.0 改名希可儿 · 右键菜单精简 · 大小拖动条 · 桌面模式坐在输入框上 · 坐下不再穿模
-
-- **改名**：角色改叫「希可儿」，界面、菜单、提示和智能体工具说明里都已替换。插件包名和存储键仍是 `dsh-plugin-whale-mate` / `dsh-whale-mate`，升级不丢设置。
-- **右键菜单**：默认只有「切换到桌面模式 / 切换到窗口模式」和「隐藏希可儿」。去掉了「坐到窗口上」「回到窗口里」「回到输入框上」等条目；她坐在哪里由拖动和模式切换决定。
-- **常用动作和表情**：设置 → 希可儿桌宠 →「右键常用动作和表情」，最多选 8 个，会按顺序以图标格子显示在右键菜单顶部。桌面模式下同步到桌面窗口。
-- **动作与表情面板**：入口先从菜单和设置里去掉；面板代码和 `openMotionMenu()` 保留，排版定下来后再放回。
-- **大小**：设置里改成拖动条（160–640 px），默认从 300 调到 360。仍是旧默认值 300 的设置会自动升级，自己选过的大小保留。
-- **桌面模式坐在输入框上**：页面上报输入框在窗口里的位置，桌面窗口按「原生窗口位置 + 输入框在窗口内的偏移」放出一个输入框座位，开启桌面模式后她默认坐在输入框上，跟着窗口移动。Windows 上，若有别的窗口挡在 Harness 前面盖住了输入框（或 Harness 顶边），她会在片刻后离开被挡住的座位。
-- **坐下穿模**：DeepSeek Reset 的裙子和围裙几乎只绑在胯骨上，坐下时大腿会直接穿出裙子。加载时为挂在胯骨上的衣物生成每条腿一个「坐姿垂坠」形变（含法线，MToon 描边也跟着走；小蝴蝶结整体平移），每帧按大腿实际抬起的角度混合：坐下时裙子盖在腿上、从膝盖垂下，走路和被拖动时按抬腿幅度跟随。
-- **修复**：后台转发给桌面窗口的命令白名单漏了 `openMotionMenu`，桌面模式下点「动作与表情」不起作用；现在一并放行 `setFavorites` / `playChoice`。
-
-## 0.5.10 修复：官方桌面版开启桌面模式后窗口立即退出（Cannot find module 'koffi'）
-
-- **现象**：运行时装好后，桌面窗口一启动就退出，提示 `桌面窗口异常退出：Error: Cannot find module 'koffi'`。
-- **原因**：Windows 上识别 Harness 窗口和其他应用窗口要用原生模块 koffi。它原来写在 `dependencies` 里，但从 ZIP 手动安装的插件目录没有 `node_modules`，官方桌面版也不会替插件执行 `npm install`，所以找不到它。加载失败的异常又发生在窗口初始化里，于是整个桌面窗口退出。
-- **修复**：
-  - koffi（MIT）随插件一起发布：`desktop/vendor/koffi/` 里是 koffi 3.1.0 的 JS 加载器和 `@koromix/koffi-win32-x64` 3.1.0 的官方预编译二进制（约 1 MB）。`desktop/koffi.cjs` 优先加载这一份，加载不了才用已安装的 `koffi` 包。`package.json` 不再有运行时依赖。
-  - 原生跟踪不可用时不再崩溃：Harness 窗口改为按页面上报的位置跟随（与网页版相同），「坐在任意窗口上」在设置里显示为不可用。
-- **验证**：用 0.5.9 的 ZIP 内容（无 `node_modules`）在 Electron 里以官方桌面模式启动，复现了一样的报错；新版同样条件下能正常启动并坐到 Harness 窗口上沿。新增 `test/koffi-bundle.test.mjs`，检查安装包里带有 koffi、二进制是 x64 的 Node-API 模块且与 npm 发布版一致、找不到 koffi 时只报错不抛异常。Windows 上实际加载这份二进制还需要在真机上确认。
-
-## 0.5.9 修复：官方桌面版下载运行时后解压失败（Invalid package …default_app.asar）
-
-- **现象**：在官方 Windows 桌面版里开启桌面模式，运行时下载并通过校验后，6 次尝试全部报 `Invalid package …\electron-v44.10.2-win32-x64.tmp\resources\default_app.asar`。
-- **原因**：官方桌面版用 Electron 的 RunAsNode 模式运行插件后台。在这种模式下，Electron 会把所有以 `.asar` 结尾的路径当作压缩包处理，而 Electron 运行时自带 `resources/default_app.asar`，所以写入这个文件时出错，重试时删除它也会出错。普通 Node（网页版 dsh）里没有这个问题。
-- **修复**：在解压、清理和替换运行时目录的同步步骤里临时设置 `process.noAsar = true`，结束后恢复原值，其他代码不受影响。上次失败留下的 `.tmp` 目录会在下一次尝试时自动清掉。
-- **验证**：新增 `test/runtime-asar.test.mjs`，在真实 Electron 的 `ELECTRON_RUN_AS_NODE=1` 环境下跑完整的下载→校验→解压→二次重装。修复前能复现与现场完全相同的错误，修复后通过。运行方式：`WHALE_MATE_TEST_ELECTRON=<electron 可执行文件> npm test`。
+[中文文档](README.zh-CN.md) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md)

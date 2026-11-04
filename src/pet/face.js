@@ -22,7 +22,7 @@ export class Face {
   }
 
   resolve(name) {
-    return this.available.has(name) ? name : this.names.get(String(name).toLowerCase()) ?? null
+    return this.available.has(name) ? name : (this.names.get(String(name).toLowerCase()) ?? null)
   }
 
   has(name) {
@@ -101,7 +101,7 @@ export class Face {
         if (/[\s，。！？、,.!?;；：:…—\-~]/.test(ch)) this.mouth.target = 0
         else {
           this.mouth.name = LATIN_VOWEL[lower] ?? (/[a-z0-9]/.test(lower) ? 'ih' : VOWELS[(ch.codePointAt(0) * 7) % 5])
-          this.mouth.target = 0.55 + ((ch.codePointAt(0) % 5) / 10)
+          this.mouth.target = 0.55 + (ch.codePointAt(0) % 5) / 10
         }
       }
     } else {

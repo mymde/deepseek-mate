@@ -1,4 +1,5 @@
 node_modules/
+.npm-cache/
 test/shots/
 *.tgz
 test/models/

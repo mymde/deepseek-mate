@@ -4,14 +4,39 @@ import { officialDesktopPid, sanitize } from '../lib/desktop.js'
 import { selectWindow, trackHarnessWindow } from '../desktop/harness-window.cjs'
 import { seatRect } from '../desktop/seat.cjs'
 
-const candidate = (id, pid, rect = { x: 100, y: 300, width: 1000, height: 600 }) => ({ id, pid, rect, className: 'Chrome_WidgetWin_1', owned: false, visible: true, minimized: false })
+const candidate = (id, pid, rect = { x: 100, y: 300, width: 1000, height: 600 }) => ({
+  id,
+  pid,
+  rect,
+  className: 'Chrome_WidgetWin_1',
+  owned: false,
+  visible: true,
+  minimized: false
+})
 
 test('official Host detection uses the actual entry and parent PID, never a page-supplied PID', () => {
   const env = { ELECTRON_RUN_AS_NODE: '1' }
-  assert.equal(officialDesktopPid({ argv: ['electron', 'C:\\Harness\\runtime\\node_modules\\@deepseek-ai\\dsh-desktop-host\\lib\\index.js'], env, ppid: 42 }), 42)
-  assert.equal(officialDesktopPid({ argv: ['node', '/x/node_modules/@deepseek-ai/dsh-desktop-host/lib/index.js'], env, ppid: 42 }), 42)
+  assert.equal(
+    officialDesktopPid({
+      argv: ['electron', 'C:\\Harness\\runtime\\node_modules\\@deepseek-ai\\dsh-desktop-host\\lib\\index.js'],
+      env,
+      ppid: 42
+    }),
+    42
+  )
+  assert.equal(
+    officialDesktopPid({ argv: ['node', '/x/node_modules/@deepseek-ai/dsh-desktop-host/lib/index.js'], env, ppid: 42 }),
+    42
+  )
   assert.equal(officialDesktopPid({ argv: ['node', '/x/dsh/lib/index.js'], env, ppid: 42 }), null)
-  assert.equal(officialDesktopPid({ argv: ['node', '/x/node_modules/@deepseek-ai/dsh-desktop-host/lib/index.js'], env: {}, ppid: 42 }), null)
+  assert.equal(
+    officialDesktopPid({
+      argv: ['node', '/x/node_modules/@deepseek-ai/dsh-desktop-host/lib/index.js'],
+      env: {},
+      ppid: 42
+    }),
+    null
+  )
   assert.equal(sanitize({ type: 'native-geometry', pid: 42 }), null)
   assert.equal(sanitize({ type: 'geometry', geometry: { pid: 42 } }).geometry.pid, undefined)
 })
@@ -31,8 +56,21 @@ test('native tracker follows movement, DPI conversion, minimisation and restorat
   const events = []
   const errors = []
   const screen = { screenToDipRect: (_, r) => Object.fromEntries(Object.entries(r).map(([k, v]) => [k, v / 1.5])) }
-  const stop = trackHarnessWindow({ pid: 42, screen, read: () => list, onChange: e => events.push(e), onError: e => errors.push(e), interval: 5 })
-  const until = async predicate => { for (let i = 0; i < 100; i++) { if (predicate()) return; await new Promise(r => setTimeout(r, 5)) } assert.fail('tracker timed out') }
+  const stop = trackHarnessWindow({
+    pid: 42,
+    screen,
+    read: () => list,
+    onChange: (e) => events.push(e),
+    onError: (e) => errors.push(e),
+    interval: 5
+  })
+  const until = async (predicate) => {
+    for (let i = 0; i < 100; i++) {
+      if (predicate()) return
+      await new Promise((r) => setTimeout(r, 5))
+    }
+    assert.fail('tracker timed out')
+  }
   try {
     assert.equal(events[0].win.top, 200)
     list = [candidate('host', 42, { x: -1500, y: 450, width: 1200, height: 900 })]
@@ -45,16 +83,24 @@ test('native tracker follows movement, DPI conversion, minimisation and restorat
     list = []
     await until(() => events.at(-1).hidden)
     assert.deepEqual(errors, [])
-  } finally { stop() }
+  } finally {
+    stop()
+  }
   const count = events.length
   list = [candidate('host', 42)]
-  await new Promise(r => setTimeout(r, 20))
+  await new Promise((r) => setTimeout(r, 20))
   assert.equal(events.length, count)
 })
 
 test('window seat uses the true edge, explicitly insets at screen top and clips offscreen width', () => {
   const view = { width: 1600, height: 900 }
-  assert.deepEqual(seatRect({ left: 100, top: 300, width: 1000, height: 600 }, 220, view), { left: 100, top: 300, width: 1000, height: 600, inset: false })
+  assert.deepEqual(seatRect({ left: 100, top: 300, width: 1000, height: 600 }, 220, view), {
+    left: 100,
+    top: 300,
+    width: 1000,
+    height: 600,
+    inset: false
+  })
   const maximised = seatRect({ left: 0, top: 0, width: 1600, height: 900 }, 220, view)
   assert.equal(maximised.inset, true)
   assert.ok(maximised.top > 180)

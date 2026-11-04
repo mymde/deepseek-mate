@@ -4,18 +4,34 @@
   "private": false,
   "description": "希可儿：DeepSeek Harness 的 3D 桌宠。安装即用，坐在输入框上陪你聊天、回复时开口说话；切换到桌面模式后可坐在任意窗口顶边和任务栏上。",
   "license": "MIT",
+  "author": "deepseek-mate contributors",
+  "homepage": "https://github.com/mymde/deepseek-mate#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mymde/deepseek-mate.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mymde/deepseek-mate/issues"
+  },
   "type": "module",
   "main": "lib/index.js",
   "scripts": {
     "build": "node scripts/build.mjs",
     "test": "node --test test/*.test.mjs",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "check:clip": "node scripts/check-clip.mjs",
     "check": "node scripts/check-pet.mjs"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@pixiv/three-vrm": "3.3.3",
     "esbuild": "0.25.10",
+    "eslint": "^10.14.0",
+    "globals": "^15.0.0",
     "koffi": "3.1.0",
+    "prettier": "^3.0.0",
     "three": "0.169.0"
   },
   "exports": {
@@ -32,8 +48,12 @@
     "!public/whale-maid.vrm",
     "cordis.patch.yml",
     "README.md",
+    "README.zh-CN.md",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
     "LICENSE",
     "ASSET_LICENSES.md",
+    "ASSET_LICENSES.en.md",
     "locale",
     "scripts/repair-vrm.py",
     "scripts/tune-mtoon.py"
@@ -67,10 +87,12 @@
   },
   "keywords": [
     "deepseek-harness",
+    "deepseek-mate",
     "dsh",
     "dsh-plugin",
-    "vrm",
     "desktop-pet",
-    "companion"
+    "companion",
+    "vrm",
+    "threejs"
   ]
 }

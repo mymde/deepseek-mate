@@ -10,7 +10,13 @@ function seatRect(rect, size, viewport) {
   if (right - left < margin * 2) return null
   const top = Math.max(rect.top, size * 0.82 + 8)
   if (top > viewport.height - size * 0.3 || top > rect.top + rect.height) return null
-  return { left, top, width: right - left, height: Math.max(1, rect.height - (top - rect.top)), inset: top !== rect.top }
+  return {
+    left,
+    top,
+    width: right - left,
+    height: Math.max(1, rect.height - (top - rect.top)),
+    inset: top !== rect.top
+  }
 }
 
 module.exports = { seatRect }

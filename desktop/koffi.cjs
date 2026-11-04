@@ -7,8 +7,16 @@ let cached = null
 function loadKoffi() {
   if (cached) return cached
   let first
-  try { cached = require('./vendor/koffi/index.cjs'); return cached } catch (error) { first = error }
-  try { cached = require('koffi'); return cached } catch {}
+  try {
+    cached = require('./vendor/koffi/index.cjs')
+    return cached
+  } catch (error) {
+    first = error
+  }
+  try {
+    cached = require('koffi')
+    return cached
+  } catch {}
   throw new Error(`无法加载 koffi（${process.platform}-${process.arch}）：${first.message}`)
 }
 module.exports = { loadKoffi }

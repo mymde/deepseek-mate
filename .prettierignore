@@ -1,0 +1,11 @@
+node_modules/
+public/
+test/shots/
+test/models/
+desktop/vendor/
+.npm-cache/
+package-lock.json
+*.tgz
+*.vrm
+*.node
+*.png
