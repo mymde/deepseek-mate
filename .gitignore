@@ -1,5 +1,7 @@
 node_modules/
 .npm-cache/
+.npmrc
+npm-token.txt
 test/shots/
 *.tgz
 test/models/
